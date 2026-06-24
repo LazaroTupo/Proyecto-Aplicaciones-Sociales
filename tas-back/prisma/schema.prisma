@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  email         String   @unique
+  passwordHash  String
+  name          String?
+  role          String   @default("user")
+  createdAt     DateTime @default(now())
+  projects      Project[] @relation("OwnerProjects")
+
+  contributions Contribution[]
+}
+
+model Project {
+  id                     Int       @id @default(autoincrement())
+  title                  String
+  description            String?
+  domain                 String?
+  complexity             Complexity @default(MEDIUM)
+  teamSize               Int?
+  deadLine               DateTime
+  durationMonths         Int?
+  budget                 Float?
+  studentGpaAvg          Float?
+  supervisorExperience   Int?
+  hasDataset             Boolean?
+
+  priorSimilarProjects   Int?
+  milestonesCompleted    Int?
+  // Nuevos Inputs Estudiantiles/Objetivos
+  trlLevel               Int        @default(1)
+  hasPatents             Boolean    @default(false)
+  hasVideoPitch          Boolean    @default(false)
+  
+  // Inputs existentes para heurística y UI
+  hasTechnicalDoc        Boolean    @default(false)
+  hasMarketStudy         Boolean    @default(false)
+  hasMonetizationModel   Boolean    @default(false)
+  sector                 Int        @default(5)
+  hasDirectCompetitors   Boolean    @default(false)
+
+  // Nuevos Outputs del Modelo de ML y Análisis
+  projectedRaisedAmount  Float?
+  feasibilityIndex       Float?
+  transparencyIndex      Float?
+  communityValidationScore Float?
+
+  ownerId                Int
+  owner                  User       @relation("OwnerProjects", fields: [ownerId], references: [id])
+  createdAt              DateTime   @default(now())
+  updatedAt              DateTime   @updatedAt
+
+  contributions         Contribution[]
+}
+
+model Contribution {
+  id        Int      @id @default(autoincrement())
+  amount    Float
+  createdAt DateTime @default(now())
+  
+  projectId Int
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+enum Complexity {
+  LOW
+  MEDIUM
+  HIGH
+}

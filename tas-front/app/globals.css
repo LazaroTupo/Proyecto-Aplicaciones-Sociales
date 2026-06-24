@@ -1,0 +1,57 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
+@import "tailwindcss";
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.ant-modal-container {
+  background-color: #0F172B !important;
+  border: 1px solid #1E205E !important;
+}
+
+.ant-steps-item-icon-number {
+  color: white;
+}
+
+.ant-select-item-option-content {
+  color: #1E293B;
+}
+
+.ant-select.ant-select-outlined{
+  color: #1E293B;
+}
+
+.ant-slider-rail{
+  background-color: gray !important;
+}
+
+.ant-slider-mark-text{
+  color:gray !important;
+}
+
+.ant-slider-mark-text.ant-slider-mark-text-active { 
+  color: white !important;
+}
+
+.ant-modal-close{
+  color: white !important;
+}
+
+.custom-notification {
+  background: #1c263f !important;
+}
+
+.custom-notification .ant-notification-notice-message,
+.custom-notification .ant-notification-notice-description,
+.custom-notification .ant-notification-notice-close {
+  color: white !important;
+  background-color: #1c263f !important;
+}
+.ant-notification-notice-title {
+  color: white !important;
+}
+.ant-steps-item-rail-wait{
+  background-color: gray !important;
+}
