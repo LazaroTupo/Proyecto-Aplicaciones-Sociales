@@ -19,11 +19,23 @@ model User {
   contributions Contribution[]
 }
 
+model Tier {
+  id          Int    @id @default(autoincrement())
+  amount      Float
+  benefit     String
+
+  projectId   Int
+  project     Project @relation(fields: [projectId], references: [id])
+}
+
+
 model Project {
   id                     Int       @id @default(autoincrement())
   title                  String
+  resume                  String
   description            String?
   domain                 String?
+
   complexity             Complexity @default(MEDIUM)
   teamSize               Int?
   deadLine               DateTime
@@ -35,6 +47,9 @@ model Project {
 
   priorSimilarProjects   Int?
   milestonesCompleted    Int?
+
+  successLabel           Boolean?
+
   // Nuevos Inputs Estudiantiles/Objetivos
   trlLevel               Int        @default(1)
   hasPatents             Boolean    @default(false)
@@ -53,24 +68,49 @@ model Project {
   transparencyIndex      Float?
   communityValidationScore Float?
 
+  successScore           Float?
+
   ownerId                Int
   owner                  User       @relation("OwnerProjects", fields: [ownerId], references: [id])
   createdAt              DateTime   @default(now())
   updatedAt              DateTime   @updatedAt
 
+  allowFree              Boolean  @default(true)
+  tiers                  Tier[]
+
   contributions         Contribution[]
+  attachments            ProjectAttachment[]
+}
+
+model ProjectAttachment {
+  id          Int      @id @default(autoincrement())
+  projectId   Int
+  filename    String
+  url         String
+  mimeType    String
+  size        Int
+  description String?
+  createdAt   DateTime @default(now())
+
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
 }
 
 model Contribution {
   id        Int      @id @default(autoincrement())
   amount    Float
   createdAt DateTime @default(now())
-  
+    
+  tierId    Int?
+
   projectId Int
   project   Project  @relation(fields: [projectId], references: [id], onDelete: Restrict)
   
   userId    Int
   user      User     @relation(fields: [userId], references: [id])
+
+  paypalId    String?
 }
 
 enum Complexity {
