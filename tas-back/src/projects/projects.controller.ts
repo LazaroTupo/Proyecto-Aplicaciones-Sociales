@@ -50,6 +50,14 @@ export class ProjectsController {
     return this.projectsService.create(body, userId, filesWithDescriptions);
   }
 
+  @UseGuards(AuthGuard('jwt'))
+  @Get('notifications')
+  getNotifications(
+    @Req() req: any
+  ) {
+    const userId = req.user.id;
+    return this.projectsService.getNotifications(userId);
+  }
 
   @UseGuards(AuthGuard('jwt'))
   @Get('allByUser')
@@ -118,14 +126,5 @@ export class ProjectsController {
     @Body() dto: UpdateProjectStatusDto,
   ) {
     return this.projectsService.updateStatus(id, dto);
-  }
-
-  @UseGuards(AuthGuard('jwt'))
-  @Get('notifications')
-  getNotifications(
-    @Req() req: any
-  ) {
-    const userId = req.user.id;
-    return this.projectsService.getNotifications(userId);
   }
 }
