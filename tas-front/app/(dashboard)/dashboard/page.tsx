@@ -212,7 +212,7 @@ export default function DashboardPage({ onSelectProjectForAnalysis }: ProjectsDa
                       </div>
                     </div>
                     <button
-                      onClick={() => router.push(`/project/${project.id}`)}
+                      onClick={() => router.push(`/dashboard/project/${project.id}`)}
                       className="group w-full py-2 bg-indigo-600 hover:bg-slate-850 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer"
                     >
                       Ver Detalle
