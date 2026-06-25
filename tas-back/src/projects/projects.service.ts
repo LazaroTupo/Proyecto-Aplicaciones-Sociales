@@ -362,7 +362,7 @@ export class ProjectsService {
     if (!project) throw new NotFoundException('Proyecto no encontrado');
 
     try {
-      const mlApiUrl = process.env.ML_API_URL || 'http://127.0.0.1:8000';
+      const mlApiUrl = process.env.ML_API_URL || 'http://213.210.20.7:8000';
       const { data } = await firstValueFrom(
         this.httpService.post(`${mlApiUrl}/analyze`, {
           targetBudget: project.budget ?? 0,

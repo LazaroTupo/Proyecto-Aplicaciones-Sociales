@@ -10,8 +10,8 @@ async function bootstrap() {
     origin: [
       // 'http://localhost:3000',
       // 'http://localhost:3001',
-      'http://ssh root@213.210.20.7:3003',
-      'http://ssh root@213.210.20.7:3004',
+      'http://213.210.20.7:3003',
+      'http://213.210.20.7:3004',
     ],
     credentials: true,
   });
