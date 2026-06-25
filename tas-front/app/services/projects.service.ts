@@ -38,6 +38,49 @@ export const getProjectById = async (
   return data;
 };
 
+export const getNotifications = async (
+  token?: string,
+) => {
+  const { data } = await axios.get(
+    `${process.env.NEXT_PUBLIC_API_URL}/projects/notifications`,
+    {
+      headers: token
+        ? {
+            Authorization: `Bearer ${token}`,
+          }
+        : {},
+    }
+  );
+
+  return data;
+};
+
+export const updateProjectStatus = async (
+  id: number,
+  status: "APPROVED" | "REJECTED",
+  token?: string,
+) => {
+  const { data } = await axios.patch(
+    `${process.env.NEXT_PUBLIC_API_URL}/projects/${id}/status`,
+    { status },
+    token
+      ? {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      : undefined,
+  );
+
+  return data;
+};
+
+export const approveProject = (id: number, token?: string) =>
+  updateProjectStatus(id, "APPROVED", token);
+
+export const rejectProject = (id: number, token?: string) =>
+  updateProjectStatus(id, "REJECTED", token);
+
 export const analyzeProjectWithAI = async (id: string) => {
   const { data } =
     await api.post<Project>(

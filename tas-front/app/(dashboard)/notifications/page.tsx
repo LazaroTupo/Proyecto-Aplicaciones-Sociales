@@ -1,23 +1,41 @@
+"use client"
 import StatusApp from '@/app/components/StatusApp'
+import { getNotifications } from '@/app/services/projects.service';
+import { useAuthStore } from '@/app/store/auth.store';
+import { Button } from 'antd';
 import { Bell, EllipsisVertical } from 'lucide-react'
-import React from 'react'
+import { useRouter } from 'next/navigation';
+import React, { useEffect, useState } from 'react'
+
+interface Notification {
+  description: string;
+  projectId: string;
+}
 
 const Notifications = () => {
 
-  const notifications = [
-    {
-      text: "Tu proyecto Sistema de prediccion de proyectos ha recibido un nuevo porcentaje de exito",
-      date: "2:30pm"
-    },
-    {
-      text: "El usuario proyecto@gmail.com ha realizado un aporte de 40$ al proyecto EduBot AI",
-      date: "Hace 3 dias"
-    },
-    {
-      text: "El proyecto MediConnect ha llegado a su total de financiamiento",
-      date: "Hace 5 dias"
-    },
-  ]
+  const router = useRouter();
+
+  const [ notifications, setNotifications ] = useState<Notification[]>([])
+
+  const getNotificationsData = async () => {
+    try {
+
+      const token = localStorage.getItem('token') ?? "";
+
+      const data = await getNotifications(token)
+
+      if (data) {
+        setNotifications(data)
+      }
+    } catch (error) {
+      console.log('Error al cargar proyectos o sesión expirada');
+    }
+  }
+
+  useEffect(() => {
+    getNotificationsData()
+  }, []);
 
   return (
     <div className="w-full p-8">
@@ -30,7 +48,7 @@ const Notifications = () => {
             Monitorera la recaudación, tiempos de campaña y edita.
           </p>
         </div>
-        <StatusApp/>
+        <StatusApp />
       </div>
       <div className='flex flex-col gap-3'>
         {
@@ -41,11 +59,10 @@ const Notifications = () => {
                   <Bell className='text-slate-800 h-5' />
                 </div>
                 <div className='text-slate-800 text-left flex justify-start w-full px-4'>
-                  {noti.text}
+                  {noti.description}
                 </div>
                 <div className='flex w-30 items-center justify-end'>
-                  <span className='text-slate-500 text-xs'>{noti.date}</span>
-                  <EllipsisVertical className='text-slate-500 cursor-pointer' />
+                  <Button onClick={() => router.push(`/project/${noti.projectId}`)}>Ver Proyecto</Button>
                 </div>
               </div>
             )

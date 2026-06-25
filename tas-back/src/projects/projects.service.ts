@@ -7,6 +7,8 @@ import { firstValueFrom } from 'rxjs';
 import * as fs from 'fs';
 import * as path from 'path';
 import { randomUUID } from 'crypto';
+import { UpdateProjectStatusDto } from './dto/update-status-project.dto';
+import { ProjectStatus } from '@prisma/client';
 
 
 @Injectable()
@@ -28,16 +30,12 @@ export class ProjectsService {
         ? JSON.parse(data.tiers)
         : data.tiers;
 
+    console.log('tiers');
+    console.log(tiers);
+
     let cleanTiers = []
 
     const allowFree = data.allowFree === true
-
-    if (!allowFree) {
-      cleanTiers = tiers.map((t: any) => ({
-        amount: Number(t.amount),
-        benefit: t.benefit,
-      }));
-    }
 
     try {
 
@@ -63,14 +61,19 @@ export class ProjectsService {
           supervisorExperience: data.supervisorExperience,
           teamSize: data.teamSize,
           allowFree,
-          ...(!allowFree
-            ? {}
-            : {
-              tiers: {
-                create: cleanTiers,
-              },
-            }),
         }
+      })
+
+      if (!allowFree) {
+        cleanTiers = tiers.map((t: any) => ({
+          amount: Number(t.amount),
+          benefit: t.benefit,
+          projectId: project.id
+        }));
+      }
+
+      const tiersCreated = await this.prisma.tier.createMany({
+        data: cleanTiers
       })
 
       if (filesWithDescriptions.length) {
@@ -121,8 +124,21 @@ export class ProjectsService {
   }
 
   async getAll(userId: number) {
+
+    const user = await this.prisma.user.findFirst({
+      where: {
+        id: userId
+      }
+    })
+
     try {
       const data = await this.prisma.project.findMany({
+        where: {
+          status:
+            user?.role === 'admin'
+              ? ProjectStatus.PENDING
+              : ProjectStatus.APPROVED,
+        },
         include: {
           _count: {
             select: {
@@ -203,6 +219,7 @@ export class ProjectsService {
         id: Number(id)
       },
       select: {
+        id: true,
         title: true,
         description: true,
         deadLine: true,
@@ -380,7 +397,7 @@ export class ProjectsService {
 
       console.log('data');
       console.log(data);
-      
+
       return await this.prisma.project.update({
         where: { id: projectId },
         data: {
@@ -393,5 +410,40 @@ export class ProjectsService {
       console.log("Error ML API:", error);
       throw new InternalServerErrorException('Error al contactar al servicio de ML');
     }
+  }
+
+  async updateStatus(id: number, dto: UpdateProjectStatusDto) {
+    const project = await this.prisma.project.findUnique({
+      where: { id },
+    });
+
+    if (!project) {
+      throw new NotFoundException('Proyecto no encontrado');
+    }
+
+    const notification = await this.prisma.notification.create({
+      data: {
+        userId: project.ownerId,
+        projectId: project.id,
+        description: `Tu proyecto ha sido ${dto.status == "APPROVED" ? "Aprobado" : "Rechazado"}`
+      }
+    })
+
+    return this.prisma.project.update({
+      where: { id },
+      data: {
+        status: dto.status
+      },
+    });
+  }
+
+  async getNotifications(userId: number){
+    const notifications = await this.prisma.notification.findMany({
+      where: {
+        userId: userId
+      }
+    })
+
+    return notifications
   }
 }

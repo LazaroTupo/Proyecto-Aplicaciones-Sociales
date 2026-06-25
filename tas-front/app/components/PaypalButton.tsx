@@ -11,7 +11,11 @@ type Props = {
   selectedTier: number | "free" | null;
 };
 
-export default function PaypalButton({ projectId, amount, selectedTier }: Props) {
+export default function PaypalButton({ 
+  projectId, 
+  amount, 
+  selectedTier
+}: Props) {
 
   return (
     <PayPalScriptProvider
@@ -31,7 +35,7 @@ export default function PaypalButton({ projectId, amount, selectedTier }: Props)
             localStorage.getItem("token");
 
           const res = await fetch(
-            "http://213.210.20.7:3004/payments/create-paypal-order",
+            `${process.env.NEXT_PUBLIC_API_URL}/payments/create-paypal-order`,
             {
               method: "POST",
               headers: {
@@ -58,7 +62,7 @@ export default function PaypalButton({ projectId, amount, selectedTier }: Props)
             localStorage.getItem("token");
 
           await fetch(
-            "http://213.210.20.7:3004/payments/capture-paypal-order",
+            `${process.env.NEXT_PUBLIC_API_URL}/payments/capture-paypal-order`,
             {
               method: "POST",
               headers: {
@@ -76,6 +80,7 @@ export default function PaypalButton({ projectId, amount, selectedTier }: Props)
               }),
             }
           );
+          
         }}
       />
     </PayPalScriptProvider>

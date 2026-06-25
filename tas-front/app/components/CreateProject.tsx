@@ -157,7 +157,7 @@ const CreateProject = ({ openCreate, setOpenCreate }: CreateProjectProps) => {
     };
 
     try {
-      const res = await fetch('http://213.210.20.7:3004/projects', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/projects`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -11,6 +11,7 @@ export interface Project {
   description: string;
   resume: string;
   domain: string | null;
+  status: "PENDING" | "APPROVED" | "REJECTED";
 
   complexity: 'LOW' | 'MEDIUM' | 'HIGH';
 

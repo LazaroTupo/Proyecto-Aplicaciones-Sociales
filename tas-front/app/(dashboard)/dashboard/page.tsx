@@ -212,13 +212,6 @@ export default function DashboardPage({ onSelectProjectForAnalysis }: ProjectsDa
                       </div>
                     </div>
                     <button
-                      onClick={() => router.push(`/analysis/${project.id}`)}
-                      className="w-full py-2 bg-emerald-200 hover:bg-slate-850 text-slate-600 hover:text-slate-700 rounded-xl text-xs font-semibold  flex items-center justify-center gap-1.5 transition cursor-pointer"
-                    >
-                      <Sparkles className="w-3.5 h-3.5 text-slate-500" />
-                      Ver Predicción de Éxito
-                    </button>
-                    <button
                       onClick={() => router.push(`/project/${project.id}`)}
                       className="group w-full py-2 bg-indigo-600 hover:bg-slate-850 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer"
                     >

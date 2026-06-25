@@ -23,7 +23,8 @@ export default function AnalysisDashboard({ id }: AnalysisDashboardProps) {
 
   const fetchProject = async () => {
     try {
-      const data = await getProjectById(id);
+      const token = localStorage.getItem("token") ?? "";
+      const data = await getProjectById(id, token);
       setProject(data);
     } catch (e) {
       console.error(e);
@@ -117,7 +118,7 @@ export default function AnalysisDashboard({ id }: AnalysisDashboardProps) {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-300 shadow-sm">
         <div>
           <h2 className="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight mb-2">{project?.title || 'Cargando...'}</h2>
-          <p className="text-sm text-slate-500 mt-1">{project?.description || 'Sin descripción'}</p>
+          <p className="text-sm text-slate-500 mt-1">{project?.resume || 'Sin descripción'}</p>
         </div>
         <div>
           <Button

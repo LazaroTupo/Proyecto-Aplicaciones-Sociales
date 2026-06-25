@@ -5,7 +5,7 @@ import { ContributionsTimeline } from '@/app/components/TimelineContributions';
 import { Project } from '@/app/types/projects.types';
 import { PayPalButtons } from '@paypal/react-paypal-js';
 import { Button, Input, Tabs } from 'antd';
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 type Props = {
   project: Project;
@@ -21,13 +21,27 @@ const sectorOptions = [
 
 const DetailProyect = ({ project }: Props) => {
 
+  const [pathname, setPathname] = useState('/');
   const [selectedTier, setSelectedTier] = useState<number | "free" | null>(null);
-
+  const [user, setUser] = useState<{ name: string, role: string, id: number } | null>(null);
   const [customAmount, setCustomAmount] = useState<string>("");
 
   const onChange = (key: any) => {
     console.log(key);
   };
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    setPathname(window.location.pathname);
+
+    const storedUser = localStorage.getItem("user");
+
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
+
 
   const sectorLabel = sectorOptions.find((sec) => sec.value == project.sector)
 
@@ -147,21 +161,26 @@ const DetailProyect = ({ project }: Props) => {
           )
         }
 
-        <div className="w-1/3 flex items-center relative">
-          {(!selectedTier && !project.allowFree) && (
-            <div
-              className="absolute inset-0 z-10 cursor-not-allowed"
-              title="Selecciona un plan de aporte primero"
-            />
-          )}
-          <div className={(!selectedTier && !project.allowFree) ? 'opacity-40 pointer-events-none w-full' : 'w-full'}>
-            <PaypalButton
-              selectedTier={selectedTier}
-              amount={Number(getAmount())}
-              projectId={project.id}
-            />
-          </div>
-        </div>
+        {
+          user?.id != project.ownerId && (
+            <div className="w-1/3 flex items-center relative">
+              {(!selectedTier && !project.allowFree) && (
+                <div
+                  className="absolute inset-0 z-10 cursor-not-allowed"
+                  title="Selecciona un plan de aporte primero"
+                />
+              )}
+              <div className={(!selectedTier && !project.allowFree) ? 'opacity-40 pointer-events-none w-full' : 'w-full'}>
+                <PaypalButton
+                  selectedTier={selectedTier}
+                  amount={Number(getAmount())}
+                  projectId={project.id}
+                />
+              </div>
+            </div>
+          )
+        }
+
 
       </div>
 

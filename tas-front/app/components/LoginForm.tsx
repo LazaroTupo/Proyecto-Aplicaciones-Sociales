@@ -31,7 +31,7 @@ export default function LoginForm() {
       const data = await res.json();
 
       if (!res.ok) throw new Error(data.message || 'Error al iniciar sesión');
-
+      localStorage.setItem('user', JSON.stringify(data.user));
       setAuth(data.access_token, data.user);
       document.cookie = `token=${data.access_token}; path=/; max-age=86400`;
       router.push('/dashboard');

@@ -98,6 +98,8 @@ export default function Projects() {
     if (!token && !localToken) {
       router.push("/login");
     }
+
+    getProjects()
   }, []);
 
   if (!mounted) return null; // Esperar a hidratación para evitar errores de CSS
@@ -149,10 +151,20 @@ export default function Projects() {
                         <UserRound size={16} />
                         <span className='text-[14px]'>{project.teamSize ?? "?"}</span>
                       </span>
-                      <span className="text-xs text-slate-500 font-medium flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5" />
-                        {daysLabel}
-                      </span>
+                      {project.status === "APPROVED" ? (
+                        <span className="text-xs text-slate-500 font-medium flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5" />
+                          {daysLabel}
+                        </span>
+                      ) : project.status === "PENDING" ? (
+                        <span className="flex items-center gap-1 px-2.5 py-1 bg-amber-500/10 border border-amber-500/20 text-amber-600 text-xs font-semibold rounded-lg">
+                          Pendiente
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1 px-2.5 py-1 bg-red-500/10 border border-red-500/20 text-red-600 text-xs font-semibold rounded-lg">
+                          Rechazado
+                        </span>
+                      )}
                     </div>
 
                     <h3 className="font-bold text-lg text-slate-800 mb-2 line-clamp-1">
@@ -180,13 +192,6 @@ export default function Projects() {
                         ></div>
                       </div>
                     </div>
-                    {/* <div className='flex justify-between items-center'>
-                      <span className='text-slate-500'>Contribuir:</span>
-                      <PaypalButton
-                        key={project.id}
-                        projectId={(project.id).toString()}
-                      />
-                    </div> */}
 
                     <button
                       onClick={() => router.push(`/analysis/${project.id}`)}
@@ -196,7 +201,7 @@ export default function Projects() {
                       Ver Predicción de Éxito
                     </button>
                     <button
-                      onClick={() => router.push(`/analysis/${project.id}`)}
+                      onClick={() => router.push(`/project/${project.id}`)}
                       className="group w-full py-2 bg-indigo-600 hover:bg-slate-850 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer"
                     >
                       Ver Detalle

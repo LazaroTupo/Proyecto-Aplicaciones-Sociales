@@ -6,6 +6,7 @@ import { UpdateProjectDto } from './dto/update-project.dto';
 import { FilesInterceptor } from '@nestjs/platform-express';
 
 import multer from 'multer';
+import { UpdateProjectStatusDto } from './dto/update-status-project.dto';
 
 @Controller('projects')
 export class ProjectsController {
@@ -77,7 +78,6 @@ export class ProjectsController {
   async getOne(
     @Param('id') id: string,
   ) {
-
     return this.projectsService.findOne(id);
   }
 
@@ -110,5 +110,22 @@ export class ProjectsController {
   ) {
     const userId = req.user.id;
     return this.projectsService.analyzeProject(projectId, userId);
+  }
+
+  @Patch(':id/status')
+  updateStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateProjectStatusDto,
+  ) {
+    return this.projectsService.updateStatus(id, dto);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('notifications')
+  getNotifications(
+    @Req() req: any
+  ) {
+    const userId = req.user.id;
+    return this.projectsService.getNotifications(userId);
   }
 }
