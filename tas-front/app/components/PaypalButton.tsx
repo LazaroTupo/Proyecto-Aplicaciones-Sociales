@@ -31,7 +31,7 @@ export default function PaypalButton({ projectId, amount, selectedTier }: Props)
             localStorage.getItem("token");
 
           const res = await fetch(
-            "http://localhost:3001/payments/create-paypal-order",
+            "http://213.210.20.7:3004/payments/create-paypal-order",
             {
               method: "POST",
               headers: {
@@ -58,7 +58,7 @@ export default function PaypalButton({ projectId, amount, selectedTier }: Props)
             localStorage.getItem("token");
 
           await fetch(
-            "http://localhost:3001/payments/capture-paypal-order",
+            "http://213.210.20.7:3004/payments/capture-paypal-order",
             {
               method: "POST",
               headers: {

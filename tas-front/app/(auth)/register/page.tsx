@@ -2,11 +2,14 @@
 
 import React, { useState } from 'react';
 import { Loader2, UserPlus, AlertCircle, CheckCircle2, Mail, Lock, User } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function RegisterForm() {
   const [formData, setFormData] = useState({ email: '', password: '', name: '' });
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
+
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,7 +25,7 @@ export default function RegisterForm() {
       if (!response.ok) throw new Error('Error al crear la cuenta');
 
       setMessage({ text: '¡Cuenta creada! Redirigiendo...', type: 'success' });
-      setTimeout(() => window.location.href = '/login', 2000);
+      router.push('/login');
     } catch (err: any) {
       setMessage({ text: err.message, type: 'error' });
     } finally {

@@ -95,13 +95,18 @@ export default function DashboardPage({ onSelectProjectForAnalysis }: ProjectsDa
 
   useEffect(() => {
     setMounted(true);
-    const localToken = localStorage.getItem('token');
+
+    if (typeof window === "undefined") return;
+
+    const localToken = localStorage.getItem("token");
+
     if (!token && !localToken) {
-      router.push('/login');
-    } else if (token || localToken) {
-      getProjects();
+      router.push("/login");
+      return;
     }
-  }, [token, router])
+
+    getProjects();
+  }, [token]);
 
   if (!mounted) return null; // Esperar a hidratación para evitar errores de CSS
   if (!token) return null; // Evitar renderizado mientras redirige
@@ -112,7 +117,7 @@ export default function DashboardPage({ onSelectProjectForAnalysis }: ProjectsDa
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
         <div>
         </div>
-        <StatusApp/>
+        <StatusApp />
       </div>
 
       <div className='flex justify-center my-6'>
@@ -152,7 +157,7 @@ export default function DashboardPage({ onSelectProjectForAnalysis }: ProjectsDa
 
 
         return filteredProjects.length === 0 ? (
-          <EmptyProjects/>
+          <EmptyProjects />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredProjects.map((project) => {
@@ -182,8 +187,8 @@ export default function DashboardPage({ onSelectProjectForAnalysis }: ProjectsDa
                     <h3 className="font-bold text-lg text-slate-800 mb-2 line-clamp-1">
                       {project.title}
                     </h3>
-                    <div 
-                     className="text-xs text-slate-500 mb-6 leading-relaxed line-clamp-5 break-words"
+                    <div
+                      className="text-xs text-slate-500 mb-6 leading-relaxed line-clamp-5 break-words"
                     >
                       {project.resume}
                     </div>

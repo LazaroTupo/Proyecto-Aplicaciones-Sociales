@@ -77,7 +77,14 @@ const DetailProyect = ({ project }: Props) => {
                 </div>
                 <Button
                   className='!bg-[#4F39F7] !text-white'
-                  onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL}${doc.url}`, '_blank')}
+                  onClick={() => {
+                    if (typeof window !== "undefined") {
+                      window.open(
+                        `${process.env.NEXT_PUBLIC_API_URL}${doc.url}`,
+                        "_blank"
+                      );
+                    }
+                  }}
                 >Ver archivo</Button>
               </div>
               <div>Descripción: {doc.description}</div>

@@ -90,13 +90,15 @@ export default function Projects() {
 
   useEffect(() => {
     setMounted(true);
-    const localToken = localStorage.getItem('token');
+
+    if (typeof window === "undefined") return;
+
+    const localToken = localStorage.getItem("token");
+
     if (!token && !localToken) {
-      router.push('/login');
-    } else if (token || localToken) {
-      getProjects();
+      router.push("/login");
     }
-  }, [token, router])
+  }, []);
 
   if (!mounted) return null; // Esperar a hidratación para evitar errores de CSS
   if (!token) return null; // Evitar renderizado mientras redirige
@@ -113,7 +115,7 @@ export default function Projects() {
             Mantente al tanto de las novedades de tus proyectos y contribuciones.
           </p>
         </div>
-        <StatusApp/>
+        <StatusApp />
       </div>
 
       {(() => {
@@ -126,7 +128,7 @@ export default function Projects() {
 
 
         return filteredProjects.length === 0 ? (
-          <EmptyProjects/>
+          <EmptyProjects />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredProjects.map((project) => {
@@ -203,7 +205,7 @@ export default function Projects() {
                       />
                     </button>
                     <div className='flex justify-end'>
-                      <Button 
+                      <Button
                         color="danger" variant="solid" size='small'
                         className='!text-[14px]'
                       >Eliminar</Button>
