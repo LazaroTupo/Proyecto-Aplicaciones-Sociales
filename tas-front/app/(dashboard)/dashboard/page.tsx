@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Clock, ArrowRight, FolderOpen, AlertCircle, CheckCircle2, User, UserRound } from 'lucide-react';
+import { Clock, ArrowRight, FolderOpen, AlertCircle, CheckCircle2, User, UserRound, Sparkles } from 'lucide-react';
 import PaypalButton from '@/app/components/PaypalButton';
 import { getAllProjects } from '@/app/services/projects.service';
 import { Project } from '@/app/types/projects.types';
@@ -211,6 +211,13 @@ export default function DashboardPage({ onSelectProjectForAnalysis }: ProjectsDa
                         ></div>
                       </div>
                     </div>
+                    <button
+                      onClick={() => router.push(`/analysis/${project.id}`)}
+                      className="w-full py-2 bg-emerald-200 hover:bg-slate-850 text-slate-600 hover:text-slate-700 rounded-xl text-xs font-semibold  flex items-center justify-center gap-1.5 transition cursor-pointer"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-slate-500" />
+                      Ver Predicción de Éxito
+                    </button>
                     <button
                       onClick={() => router.push(`/project/${project.id}`)}
                       className="group w-full py-2 bg-indigo-600 hover:bg-slate-850 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer"
