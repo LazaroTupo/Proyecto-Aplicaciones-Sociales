@@ -377,6 +377,10 @@ export class ProjectsService {
         })
       );
 
+
+      console.log('data');
+      console.log(data);
+      
       return await this.prisma.project.update({
         where: { id: projectId },
         data: {
