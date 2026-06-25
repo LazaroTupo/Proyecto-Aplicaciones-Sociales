@@ -6,10 +6,13 @@ import {
 } from "@paypal/react-paypal-js";
 
 type Props = {
-  projectId: string;
+  projectId: number;
+  amount: number;
+  selectedTier: number | "free" | null;
 };
 
-export default function PaypalButton({ projectId }: Props) {
+export default function PaypalButton({ projectId, amount, selectedTier }: Props) {
+
   return (
     <PayPalScriptProvider
       options={{
@@ -19,24 +22,42 @@ export default function PaypalButton({ projectId }: Props) {
       }}
     >
       <PayPalButtons
+        style={{
+          height: 32,
+        }}
         createOrder={async () => {
+
+          const token =
+            localStorage.getItem("token");
+
           const res = await fetch(
             "http://localhost:3001/payments/create-paypal-order",
             {
               method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                amount,
+                projectId: projectId,
+                tierId:
+                  selectedTier === "free"
+                    ? null
+                    : selectedTier,
+              }),
             }
           );
 
           const data = await res.json();
-
           return data.orderId;
         }}
 
         onApprove={async (data) => {
+          const token =
+            localStorage.getItem("token");
 
-          const token = localStorage.getItem("token");
-          
-          const res = await fetch(
+          await fetch(
             "http://localhost:3001/payments/capture-paypal-order",
             {
               method: "POST",
@@ -46,14 +67,15 @@ export default function PaypalButton({ projectId }: Props) {
               },
               body: JSON.stringify({
                 orderId: data.orderID,
-                projectId: projectId
+                projectId: projectId,
+                tierId:
+                  selectedTier === "free"
+                    ? null
+                    : selectedTier,
+                amount,
               }),
             }
           );
-
-          const payment = await res.json();
-
-          console.log(payment);
         }}
       />
     </PayPalScriptProvider>

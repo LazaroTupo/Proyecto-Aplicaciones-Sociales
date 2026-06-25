@@ -157,7 +157,7 @@ export default function Projects() {
                       {project.title}
                     </h3>
                     <p className="text-xs text-slate-500 mb-6 line-clamp-3 leading-relaxed">
-                      {project.description}
+                      {project.resume}
                     </p>
                   </div>
 

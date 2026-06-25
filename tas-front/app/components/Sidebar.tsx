@@ -1,16 +1,56 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { BrainCircuit, LayoutGrid, PlusCircle, Wallet, Sparkles, ChartColumnIncreasing, SquareChartGantt, Bell, LogOut } from 'lucide-react';
-import ProjectForm from './ProjectForm';
-import CreateProject from './CreateProject';
-import { useAuthStore } from '../store/auth.store';
+import {
+  BrainCircuit,
+  LayoutGrid,
+  PlusCircle,
+  ChartColumnIncreasing,
+  SquareChartGantt,
+  Bell,
+  ArrowLeftRight,
+  LogOut,
+  UserRound
+} from "lucide-react";
 import { useRouter } from 'next/navigation';
 
+const navItems = [
+  {
+    label: 'Inicio',
+    href: '/dashboard',
+    icon: LayoutGrid,
+  },
+  {
+    label: 'Registrar Proyecto',
+    href: '/projects/new',
+    icon: PlusCircle,
+  },
+  {
+    label: 'Analytics',
+    href: '/analytics',
+    icon: ChartColumnIncreasing,
+  },
+  {
+    label: 'Mis proyectos',
+    href: '/projects',
+    icon: SquareChartGantt,
+  },
+  {
+    label: 'Notificaciones',
+    href: '/notifications',
+    icon: Bell,
+  },
+];
+
 export default function Sidebar() {
+
   const [pathname, setPathname] = useState('/');
   const [openCreate, setOpenCreate] = useState(false)
-  const { logout, user } = useAuthStore();
+  const [showRoleMenu, setShowRoleMenu] = useState(false);
+  const [currentRole, setCurrentRole] = useState<"CREADOR" | "FINANCIADOR">(
+    "CREADOR"
+  );
+
   const router = useRouter();
 
   useEffect(() => {
@@ -20,42 +60,9 @@ export default function Sidebar() {
   }, []);
 
   const handleLogout = () => {
-    logout();
-    router.push('/login');
+    localStorage.removeItem("token");
+    router.replace("/login");
   };
-
-  const navItems = [
-    {
-      label: 'Inicio',
-      href: '/dashboard',
-      icon: LayoutGrid,
-    },
-    {
-      label: 'Registrar Proyecto',
-      href: '/projects/new',
-      icon: PlusCircle,
-    },
-    {
-      label: 'Analytics',
-      href: '/analytics',
-      icon: ChartColumnIncreasing,
-    },
-    {
-      label: 'Mis proyectos',
-      href: '/projects',
-      icon: SquareChartGantt,
-    },
-    {
-      label: 'Notificaciones',
-      href: '/notifications',
-      icon: Bell,
-    },
-    // {
-    //   label: 'Registrar Aporte',
-    //   href: '/contributions/new',
-    //   icon: Wallet,
-    // },
-  ];
 
   return (
     <aside className="w-full md:w-64 bg-white py-6 px-4 flex flex-col justify-between shrink-0 md:h-screen md:sticky md:top-0 shadow-md shadow-r">
@@ -74,18 +81,16 @@ export default function Sidebar() {
         <nav className="space-y-2">
           {navItems.map((item) => {
             const Icon = item.icon;
-            // Evaluamos si el botón actual es la ruta activa
             const isActive = pathname === item.href;
 
             return (
               <a
                 key={item.href}
                 href={item.href}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition ${
-                  isActive
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition ${isActive
                     ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/10'
                     : 'text-slate-500 hover:bg-slate-100 hover:text-slate-500'
-                }`}
+                  }`}
               >
                 <Icon className="w-5 h-5" />
                 <span>{item.label}</span>
@@ -95,39 +100,59 @@ export default function Sidebar() {
         </nav>
       </div>
 
-      {/* Footer de la barra lateral */}
-      <div className="mt-8 pt-6 border-t border-slate-300">
-        <div className="flex items-center justify-between">
+
+      <div className="mt-8 pt-6 border-t border-slate-300 space-y-2">
+
+        {/* Selector de rol */}
+        <button
+          onClick={() => setShowRoleMenu(!showRoleMenu)}
+          className="w-full flex items-center justify-between px-2 py-2 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-100 transition"
+        >
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold text-white uppercase">
-              {user?.name ? user.name.substring(0, 2) : 'UI'}
+            <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold text-white">
+              <UserRound className="w-5 h-5" />
             </div>
-            <div className="overflow-hidden">
-              <p className="text-xs font-semibold text-slate-800 truncate" title={user?.name}>
-                {user?.name || 'Cargando...'}
-              </p>
-              <p className="text-[10px] text-slate-500 truncate" title={user?.email}>
-                {user?.email || 'UNMSM'}
-              </p>
-            </div>
+            <span>
+              Jose ({currentRole === "CREADOR" ? "Creador" : "Financiador"})
+            </span>
           </div>
-          
-          <button 
-            onClick={handleLogout}
-            title="Cerrar sesión"
-            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
-        </div>
+          <ArrowLeftRight size={18}/>
+        </button>
+
+        {showRoleMenu && (
+          <div className="space-y-1">
+            <button
+              onClick={() => {
+                setCurrentRole("CREADOR");
+                setShowRoleMenu(false);
+              }}
+              className="w-full text-left px-4 py-2 rounded-lg text-sm hover:bg-slate-100"
+            >
+              Creador
+            </button>
+
+            <button
+              onClick={() => {
+                setCurrentRole("FINANCIADOR");
+                setShowRoleMenu(false);
+              }}
+              className="w-full text-left px-4 py-2 rounded-lg text-sm hover:bg-slate-100"
+            >
+              Financiador
+            </button>
+          </div>
+        )}
+
+        <button
+          onClick={handleLogout}
+          className="w-full flex px-2 py-2 items-center gap-3 rounded-xl text-sm font-semibold text-red-600 hover:bg-red-50 transition"
+        >
+          <LogOut className="w-5 h-5" />
+          <span>Cerrar sesión</span>
+        </button>
       </div>
 
-      <CreateProject
-        openCreate={openCreate}
-        setOpenCreate={setOpenCreate}
-      />
 
-      
     </aside>
   );
 }

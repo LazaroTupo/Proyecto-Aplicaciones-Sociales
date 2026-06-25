@@ -4,6 +4,10 @@ import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
+import * as fs from 'fs';
+import * as path from 'path';
+import { randomUUID } from 'crypto';
+
 
 @Injectable()
 export class ProjectsService {
@@ -13,7 +17,27 @@ export class ProjectsService {
     private httpService: HttpService
   ) { }
 
-  async create(data: CreateProjectDto, userId: number) {
+  async create(
+    data: CreateProjectDto,
+    userId: number,
+    filesWithDescriptions: { file: Express.Multer.File; description: string }[],
+  ) {
+
+    const tiers =
+      typeof data.tiers === "string"
+        ? JSON.parse(data.tiers)
+        : data.tiers;
+
+    let cleanTiers = []
+
+    const allowFree = data.allowFree === true
+
+    if (!allowFree) {
+      cleanTiers = tiers.map((t: any) => ({
+        amount: Number(t.amount),
+        benefit: t.benefit,
+      }));
+    }
 
     try {
 
@@ -21,6 +45,7 @@ export class ProjectsService {
         data: {
           title: data.title,
           description: data.description,
+          resume: data.resume,
           deadLine: new Date(data.deadLine),
           budget: data.budget,
           ownerId: userId,
@@ -36,9 +61,52 @@ export class ProjectsService {
           priorSimilarProjects: data.priorSimilarProjects,
           sector: data.sector,
           supervisorExperience: data.supervisorExperience,
-          teamSize: data.teamSize
+          teamSize: data.teamSize,
+          allowFree,
+          ...(!allowFree
+            ? {}
+            : {
+              tiers: {
+                create: cleanTiers,
+              },
+            }),
         }
       })
+
+      if (filesWithDescriptions.length) {
+        const uploadDir = path.join(
+          process.cwd(),
+          'public',
+          'uploads',
+          'projects',
+          String(project.id),
+        );
+
+        fs.mkdirSync(uploadDir, { recursive: true });
+
+        const attachmentsData = filesWithDescriptions.map(({ file, description }) => {
+          const ext = path.extname(file.originalname);
+          const uniqueName = `${randomUUID()}${ext}`;
+          const filePath = path.join(uploadDir, uniqueName);
+
+          fs.writeFileSync(filePath, file.buffer);
+
+          const publicUrl = `/uploads/projects/${project.id}/${uniqueName}`;
+
+          return {
+            projectId: project.id,
+            url: publicUrl,
+            filename: file.originalname,
+            mimeType: file.mimetype,
+            size: file.size,
+            description,
+          };
+        });
+
+        await this.prisma.projectAttachment.createMany({
+          data: attachmentsData,
+        });
+      }
 
       return project;
 
@@ -139,6 +207,7 @@ export class ProjectsService {
         description: true,
         deadLine: true,
         budget: true,
+        resume: true,
         ownerId: true,
         complexity: true,
         durationMonths: true,
@@ -157,10 +226,45 @@ export class ProjectsService {
         feasibilityIndex: true,
         transparencyIndex: true,
         communityValidationScore: true,
+        successScore: true,
+        allowFree: true,
+        tiers: {
+          select: {
+            id: true,
+            amount: true,
+            benefit: true,
+          }
+        },
+        contributions: {
+          select: {
+            user: {
+              select: {
+                name: true
+              }
+            },
+            amount: true,
+            createdAt: true
+          }
+        },
+        attachments: true,
       }
     })
 
-    return project;
+    if (!project) {
+      throw new BadRequestException(
+        'Proyecto no encontrado.',
+      );
+    }
+
+    const raised = project.contributions.reduce(
+      (acc, contribution) => acc + contribution.amount,
+      0,
+    );
+
+    return {
+      ...project,
+      raised
+    };
   }
 
   async delete(projectId: number, userId: number) {

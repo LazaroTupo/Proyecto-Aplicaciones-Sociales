@@ -167,7 +167,7 @@ export default function DashboardPage({ onSelectProjectForAnalysis }: ProjectsDa
                   key={project.id}
                   className="bg-white border border-indigo-300/30 rounded-2xl px-5 pt-4 pb-3 hover:border-slate-400 transition duration-500 flex flex-col justify-between"
                 >
-                  <div>
+                  <div className=''>
                     <div className="flex items-center justify-between gap-4 mb-4">
                       <span className="flex items-center gap-1 px-2.5 py-1 bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 text-xs font-semibold rounded-lg">
                         <UserRound size={16} />
@@ -182,9 +182,11 @@ export default function DashboardPage({ onSelectProjectForAnalysis }: ProjectsDa
                     <h3 className="font-bold text-lg text-slate-800 mb-2 line-clamp-1">
                       {project.title}
                     </h3>
-                    <p className="text-xs text-slate-500 mb-6 line-clamp-3 leading-relaxed">
-                      {project.description}
-                    </p>
+                    <div 
+                     className="text-xs text-slate-500 mb-6 leading-relaxed line-clamp-5 break-words"
+                    >
+                      {project.resume}
+                    </div>
                   </div>
 
                   <div className="space-y-2 pt-4 border-t border-slate-900">
@@ -204,23 +206,8 @@ export default function DashboardPage({ onSelectProjectForAnalysis }: ProjectsDa
                         ></div>
                       </div>
                     </div>
-                    {/* <div className='flex justify-between items-center'>
-                      <span className='text-slate-500'>Contribuir:</span>
-                      <PaypalButton
-                        key={project.id}
-                        projectId={(project.id).toString()}
-                      />
-                    </div> */}
-
-                    {/* <button
-                      onClick={() => router.push(`/analysis/${project.id}`)}
-                      className="w-full py-2 bg-indigo-600 hover:bg-slate-850 text-slate-300 hover:text-white rounded-xl text-xs font-semibold  flex items-center justify-center gap-1.5 transition cursor-pointer"
-                    >
-                      <Sparkles className="w-3.5 h-3.5 text-white" />
-                      Ver Predicción de Éxito
-                    </button> */}
                     <button
-                      onClick={() => router.push(`/analysis/${project.id}`)}
+                      onClick={() => router.push(`/project/${project.id}`)}
                       className="group w-full py-2 bg-indigo-600 hover:bg-slate-850 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer"
                     >
                       Ver Detalle

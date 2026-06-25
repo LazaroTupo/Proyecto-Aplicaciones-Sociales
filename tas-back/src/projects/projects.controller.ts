@@ -1,8 +1,11 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Req, UseGuards, } from '@nestjs/common';
+import { Body, Controller, Delete, FileTypeValidator, Get, MaxFileSizeValidator, Param, ParseFilePipe, ParseIntPipe, Patch, Post, Req, UploadedFiles, UseGuards, UseInterceptors, } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { UpdateProjectDto } from './dto/update-project.dto';
+import { FilesInterceptor } from '@nestjs/platform-express';
+
+import multer from 'multer';
 
 @Controller('projects')
 export class ProjectsController {
@@ -11,12 +14,39 @@ export class ProjectsController {
 
   @UseGuards(AuthGuard('jwt'))
   @Post()
+  @UseInterceptors(FilesInterceptor('files', 3))
   async create(
     @Body() body: CreateProjectDto,
+    @UploadedFiles(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 }),
+          new FileTypeValidator({ fileType: /(pdf|jpg|jpeg|png|docx?)$/ }),
+        ],
+        fileIsRequired: false,
+      }),
+    )
+    files: Express.Multer.File[],
     @Req() req: any
   ) {
     const userId = req.user.id;
-    return this.projectsService.create(body, userId);
+    
+    let descriptions: string[] = [];
+    if (body.fileDescriptions) {
+      try {
+        descriptions = JSON.parse(body.fileDescriptions);
+      } catch {
+        descriptions = [];
+      }
+    }
+
+    const filesWithDescriptions = (files || []).map((file, index) => ({
+      file,
+      description: descriptions[index] ?? '',
+    }));
+
+
+    return this.projectsService.create(body, userId, filesWithDescriptions);
   }
 
 
@@ -37,6 +67,7 @@ export class ProjectsController {
     @Param('id') id: string,
   ) {
     const userId = req.user.id;
+    
     return this.projectsService.getAll(userId);
   }
 
