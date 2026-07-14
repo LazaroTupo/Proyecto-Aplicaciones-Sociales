@@ -1,449 +1,206 @@
-import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, In } from 'typeorm';
+import { Project } from './entities/project.entity';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
-import { HttpService } from '@nestjs/axios';
-import { firstValueFrom } from 'rxjs';
-import * as fs from 'fs';
+import { UpdateProjectStatusDto } from './dto/update-project-status.dto';
+import { FindProjectsDto } from './dto/find-projects.dto';
+import { User } from '../users/entities/user.entity';
+import { AiPredictionService } from '../ai-prediction/ai-prediction.service';
+import { ManticoreService } from '../manticore/manticore.service';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import * as fs from 'fs/promises';
 import * as path from 'path';
-import { randomUUID } from 'crypto';
-import { UpdateProjectStatusDto } from './dto/update-status-project.dto';
-import { ProjectStatus } from '@prisma/client';
-
 
 @Injectable()
 export class ProjectsService {
-
   constructor(
-    private prisma: PrismaService,
-    private httpService: HttpService
-  ) { }
+    @InjectRepository(Project)
+    private readonly projectRepository: Repository<Project>,
+    private readonly aiPredictionService: AiPredictionService,
+    private readonly manticoreService: ManticoreService,
+  ) {}
 
-  async create(
-    data: CreateProjectDto,
-    userId: number,
-    filesWithDescriptions: { file: Express.Multer.File; description: string }[],
-  ) {
+  async create(createProjectDto: CreateProjectDto, user: User, files: Express.Multer.File[]) {
+    const descriptionLength = createProjectDto.descriptionLength ?? createProjectDto.description?.length ?? 0;
+    
+    // Llamar al microservicio de IA para predecir éxito
+    const aiResult = await this.aiPredictionService.predict({
+      targetAmount: createProjectDto.targetAmount,
+      durationDays: createProjectDto.durationDays,
+      trlLevel: createProjectDto.trlLevel,
+      hasVideo: createProjectDto.hasVideo || false,
+      category: createProjectDto.category,
+      descriptionLength,
+    });
 
-    const tiers =
-      typeof data.tiers === "string"
-        ? JSON.parse(data.tiers)
-        : data.tiers;
+    const project = this.projectRepository.create({
+      ...createProjectDto,
+      descriptionLength,
+      aiSuccessProbability: aiResult.successProbability,
+      aiFeasibilityIndex: aiResult.feasibilityIndex,
+      aiRecommendations: aiResult.recommendations,
+      creator: user,
+    });
+    const savedProject = await this.projectRepository.save(project);
 
-    console.log('tiers');
-    console.log(tiers);
+    if (files && files.length > 0) {
+      const uploadDir = path.join(process.cwd(), 'uploads', 'projects', savedProject.id);
+      await fs.mkdir(uploadDir, { recursive: true });
 
-    let cleanTiers = []
-
-    const allowFree = data.allowFree === true
-
-    try {
-
-      const project = await this.prisma.project.create({
-        data: {
-          title: data.title,
-          description: data.description,
-          resume: data.resume,
-          deadLine: new Date(data.deadLine),
-          budget: data.budget,
-          ownerId: userId,
-          complexity: data.complexity,
-          durationMonths: data.durationMonths,
-          hasDirectCompetitors: data.hasDirectCompetitors,
-          hasMarketStudy: data.hasMarketStudy,
-          hasMonetizationModel: data.hasMonetizationModel,
-          hasTechnicalDoc: data.hasTechnicalDoc,
-          trlLevel: data.trlLevel,
-          hasPatents: data.hasPatents,
-          hasVideoPitch: data.hasVideoPitch,
-          priorSimilarProjects: data.priorSimilarProjects,
-          sector: data.sector,
-          supervisorExperience: data.supervisorExperience,
-          teamSize: data.teamSize,
-          allowFree,
-        }
-      })
-
-      if (!allowFree) {
-        cleanTiers = tiers.map((t: any) => ({
-          amount: Number(t.amount),
-          benefit: t.benefit,
-          projectId: project.id
-        }));
+      const fileNames: string[] = [];
+      for (const file of files) {
+        const destPath = path.join(uploadDir, file.originalname);
+        await fs.copyFile(file.path, destPath);
+        await fs.unlink(file.path);
+        fileNames.push(file.originalname);
       }
-
-      const tiersCreated = await this.prisma.tier.createMany({
-        data: cleanTiers
-      })
-
-      if (filesWithDescriptions.length) {
-        const uploadDir = path.join(
-          process.cwd(),
-          'public',
-          'uploads',
-          'projects',
-          String(project.id),
-        );
-
-        fs.mkdirSync(uploadDir, { recursive: true });
-
-        const attachmentsData = filesWithDescriptions.map(({ file, description }) => {
-          const ext = path.extname(file.originalname);
-          const uniqueName = `${randomUUID()}${ext}`;
-          const filePath = path.join(uploadDir, uniqueName);
-
-          fs.writeFileSync(filePath, file.buffer);
-
-          const publicUrl = `/uploads/projects/${project.id}/${uniqueName}`;
-
-          return {
-            projectId: project.id,
-            url: publicUrl,
-            filename: file.originalname,
-            mimeType: file.mimetype,
-            size: file.size,
-            description,
-          };
-        });
-
-        await this.prisma.projectAttachment.createMany({
-          data: attachmentsData,
-        });
-      }
-
-      return project;
-
-    } catch (err) {
-      console.log('err');
-      console.log(err);
-
-      throw new InternalServerErrorException(
-        'Ha ocurrido un error al registrar el proyecto',
-      );
+      
+      savedProject.documentUrls = fileNames;
+      await this.projectRepository.save(savedProject);
     }
+
+    await this.manticoreService.indexProject(savedProject);
+
+    return savedProject;
   }
 
-  async getAll(userId: number) {
+  async findAll(query: FindProjectsDto) {
+    const { page = 1, limit = 10, search, creatorId } = query;
+    const skip = (page - 1) * limit;
+    
+    let whereClause: any = {};
+    if (creatorId) {
+      whereClause.creator = { id: creatorId };
+    }
+    let manticoreUuids: string[] = [];
 
-    const user = await this.prisma.user.findFirst({
-      where: {
-        id: userId
+    if (search) {
+      manticoreUuids = await this.manticoreService.search(search);
+      if (manticoreUuids.length === 0) {
+        return { data: [], total: 0, page, lastPage: 0 };
       }
-    })
+      whereClause.id = In(manticoreUuids);
+    }
 
-    try {
-      const data = await this.prisma.project.findMany({
-        where: {
-          status:
-            user?.role === 'admin'
-              ? ProjectStatus.PENDING
-              : ProjectStatus.APPROVED,
-        },
-        include: {
-          _count: {
-            select: {
-              contributions: true,
-            },
-          },
-          contributions: {
-            select: {
-              amount: true,
-            },
-          },
-        },
-        orderBy: {
-          deadLine: "desc"
-        }
+    const [data, total] = await this.projectRepository.findAndCount({
+      where: whereClause,
+      skip,
+      take: limit,
+      order: { createdAt: 'DESC' },
+    });
+
+    // Reorder data based on Manticore relevance if search was used
+    let finalData = data;
+    if (search && manticoreUuids.length > 0) {
+      finalData = data.sort((a, b) => {
+        return manticoreUuids.indexOf(a.id) - manticoreUuids.indexOf(b.id);
       });
-
-      return data.map((project) => ({
-        ...project,
-        raised: project.contributions.reduce(
-          (acc, contribution) => acc + contribution.amount,
-          0,
-        ),
-        contributors: project._count.contributions,
-        contributions: undefined,
-        _count: undefined,
-      }));
-    } catch (err) {
-      throw new InternalServerErrorException(
-        'Ha ocurrido un error al obtener los proyectos',
-      );
     }
-  }
-
-  async getAllById(userId: number) {
-    try {
-      const data = await this.prisma.project.findMany({
-        where: {
-          ownerId: userId,
-        },
-        include: {
-          _count: {
-            select: {
-              contributions: true,
-            },
-          },
-          contributions: {
-            select: {
-              amount: true,
-            },
-          },
-        },
-        orderBy: {
-          deadLine: "desc"
-        }
-      });
-
-      return data.map((project) => ({
-        ...project,
-        raised: project.contributions.reduce(
-          (acc, contribution) => acc + contribution.amount,
-          0,
-        ),
-        contributors: project._count.contributions,
-        contributions: undefined,
-        _count: undefined,
-      }));
-    } catch (err) {
-      throw new InternalServerErrorException(
-        'Ha ocurrido un error al obtener los proyectos',
-      );
-    }
-  }
-
-  async findOne(id: string) {
-    const project = await this.prisma.project.findFirst({
-      where: {
-        id: Number(id)
-      },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        deadLine: true,
-        budget: true,
-        resume: true,
-        ownerId: true,
-        complexity: true,
-        durationMonths: true,
-        hasDirectCompetitors: true,
-        hasMarketStudy: true,
-        hasMonetizationModel: true,
-        hasTechnicalDoc: true,
-        trlLevel: true,
-        hasPatents: true,
-        hasVideoPitch: true,
-        priorSimilarProjects: true,
-        sector: true,
-        supervisorExperience: true,
-        teamSize: true,
-        projectedRaisedAmount: true,
-        feasibilityIndex: true,
-        transparencyIndex: true,
-        communityValidationScore: true,
-        successScore: true,
-        allowFree: true,
-        tiers: {
-          select: {
-            id: true,
-            amount: true,
-            benefit: true,
-          }
-        },
-        contributions: {
-          select: {
-            user: {
-              select: {
-                name: true
-              }
-            },
-            amount: true,
-            createdAt: true
-          }
-        },
-        attachments: true,
-      }
-    })
-
-    if (!project) {
-      throw new BadRequestException(
-        'Proyecto no encontrado.',
-      );
-    }
-
-    const raised = project.contributions.reduce(
-      (acc, contribution) => acc + contribution.amount,
-      0,
-    );
 
     return {
-      ...project,
-      raised
+      data: finalData,
+      total,
+      page,
+      lastPage: Math.ceil(total / limit),
     };
   }
 
-  async delete(projectId: number, userId: number) {
-
-    try {
-
-      const project = await this.prisma.project.findFirst({
-        where: {
-          id: projectId,
-          ownerId: userId
-        },
-        include: {
-          _count: {
-            select: { contributions: true }
-          }
-        }
-      })
-
-      if (!project) {
-        throw new NotFoundException(
-          'El proyecto no existe o no tienes permisos para gestionarlo',
-        );
-      }
-
-      if (project._count.contributions > 0) {
-        throw new BadRequestException(
-          'No se puede eliminar el proyecto porque ya cuenta con aportaciones registradas.',
-        );
-      }
-
-      await this.prisma.project.delete({
-        where: { id: project.id }
-      });
-
-      return {
-        success: true,
-        message: 'El proyecto ha sido eliminado correctamente.'
-      };
-
-
-    } catch (err) {
-      if (err instanceof NotFoundException || err instanceof BadRequestException) {
-        throw err;
-      }
-      throw new InternalServerErrorException(
-        'Ocurrió un error al intentar eliminar el proyecto',
-      );
-    }
-  }
-
-  async update(projectId: number, userId: number, data: UpdateProjectDto) {
-    try {
-      const project = await this.prisma.project.findFirst({
-        where: { id: projectId, ownerId: userId }
-      });
-
-      if (!project) {
-        throw new NotFoundException('Proyecto no encontrado o no tienes permisos.');
-      }
-
-      return await this.prisma.project.update({
-        where: { id: projectId },
-        data: {
-          title: data.title,
-          description: data.description,
-          deadLine: data.deadLine,
-          budget: data.budget,
-          ownerId: userId,
-          complexity: data.complexity,
-          durationMonths: data.durationMonths,
-          hasDirectCompetitors: data.hasDirectCompetitors,
-          hasMarketStudy: data.hasMarketStudy,
-          hasMonetizationModel: data.hasMonetizationModel,
-          hasTechnicalDoc: data.hasTechnicalDoc,
-          trlLevel: data.trlLevel,
-          hasPatents: data.hasPatents,
-          hasVideoPitch: data.hasVideoPitch,
-          priorSimilarProjects: data.priorSimilarProjects ?? 0,
-          sector: data.sector,
-          supervisorExperience: data.supervisorExperience ?? 0,
-          teamSize: data.teamSize
-        }
-      });
-    } catch (err) {
-      if (err instanceof NotFoundException) throw err;
-      throw new InternalServerErrorException('Error al actualizar el proyecto.');
-    }
-  }
-
-  async analyzeProject(projectId: number, userId: number) {
-    const project = await this.prisma.project.findFirst({
-      where: { id: projectId, ownerId: userId }
-    });
-
-    if (!project) throw new NotFoundException('Proyecto no encontrado');
-
-    try {
-      const mlApiUrl = process.env.ML_API_URL || 'http://213.210.20.7:8000';
-      const { data } = await firstValueFrom(
-        this.httpService.post(`${mlApiUrl}/analyze`, {
-          targetBudget: project.budget ?? 0,
-          durationMonths: project.durationMonths ?? 0,
-          trlLevel: project.trlLevel ?? 1,
-          teamSize: project.teamSize ?? 1,
-          hasPatents: project.hasPatents ?? false,
-          supervisorExperience: project.supervisorExperience ?? 0,
-          hasTechnicalDoc: project.hasTechnicalDoc ?? false,
-          hasMarketStudy: project.hasMarketStudy ?? false,
-          hasVideoPitch: project.hasVideoPitch ?? false
-        })
-      );
-
-
-      console.log('data');
-      console.log(data);
-
-      return await this.prisma.project.update({
-        where: { id: projectId },
-        data: {
-          projectedRaisedAmount: data.projectedFundingRatio,
-          feasibilityIndex: data.feasibilityIndex,
-          transparencyIndex: data.transparencyIndex
-        }
-      });
-    } catch (error) {
-      console.log("Error ML API:", error);
-      throw new InternalServerErrorException('Error al contactar al servicio de ML');
-    }
-  }
-
-  async updateStatus(id: number, dto: UpdateProjectStatusDto) {
-    const project = await this.prisma.project.findUnique({
+  async findOne(id: string) {
+    const project = await this.projectRepository.findOne({
       where: { id },
+      relations: { creator: true, rewards: true },
     });
 
     if (!project) {
-      throw new NotFoundException('Proyecto no encontrado');
+      throw new NotFoundException(`Project with ID ${id} not found`);
     }
 
-    const notification = await this.prisma.notification.create({
-      data: {
-        userId: project.ownerId,
-        projectId: project.id,
-        description: `Tu proyecto ha sido ${dto.status == "APPROVED" ? "Aprobado" : "Rechazado"}`
-      }
-    })
-
-    return this.prisma.project.update({
-      where: { id },
-      data: {
-        status: dto.status
-      },
-    });
+    return project;
   }
 
-  async getNotifications(userId: number){
-    const notifications = await this.prisma.notification.findMany({
-      where: {
-        userId: userId
-      }
-    })
+  async update(id: string, updateProjectDto: UpdateProjectDto, userId: string, files?: Express.Multer.File[]) {
+    const project = await this.findOne(id);
 
-    return notifications
+    if (project.creator.id !== userId) {
+      throw new ForbiddenException('You can only edit your own projects');
+    }
+
+    if (updateProjectDto.rewards) {
+      // Eliminar las recompensas antiguas para evitar choques de restricciones NOT NULL u orfandad
+      await this.projectRepository.manager.delete('Reward', { project: { id: project.id } });
+    }
+
+    Object.assign(project, updateProjectDto);
+    const updatedProject = await this.projectRepository.save(project);
+
+    if (files && files.length > 0) {
+      const uploadDir = path.join(process.cwd(), 'uploads', 'projects', updatedProject.id);
+      await fs.mkdir(uploadDir, { recursive: true });
+
+      const fileNames: string[] = [];
+      for (const file of files) {
+        const destPath = path.join(uploadDir, file.originalname);
+        await fs.copyFile(file.path, destPath);
+        await fs.unlink(file.path);
+        fileNames.push(file.originalname);
+      }
+      
+      updatedProject.documentUrls = [...(project.documentUrls || []), ...fileNames];
+      await this.projectRepository.save(updatedProject);
+    }
+
+    await this.manticoreService.updateProject(updatedProject);
+
+    return updatedProject;
+  }
+
+  async updateStatus(id: string, updateProjectStatusDto: UpdateProjectStatusDto) {
+    const project = await this.findOne(id);
+    project.status = updateProjectStatusDto.status;
+    
+    const updatedProject = await this.projectRepository.save(project);
+
+    // TODO: Manticore Search - Sync updated status to index
+
+    return updatedProject;
+  }
+
+  async removeFile(id: string, filename: string, userId: string) {
+    const project = await this.findOne(id);
+
+    if (project.creator.id !== userId) {
+      throw new ForbiddenException('You can only delete files from your own projects');
+    }
+
+    if (!project.documentUrls || !project.documentUrls.includes(filename)) {
+      throw new NotFoundException(`File ${filename} not found in this project`);
+    }
+
+    // Remove from array and save
+    project.documentUrls = project.documentUrls.filter((file) => file !== filename);
+    await this.projectRepository.save(project);
+
+    // Physically delete the file
+    try {
+      const filePath = path.join(process.cwd(), 'uploads', 'projects', project.id, filename);
+      await fs.unlink(filePath);
+    } catch (error) {
+      // Ignore if file doesn't exist on disk
+      console.error(`Could not delete file ${filename} from disk:`, error.message);
+    }
+
+    return { message: 'File successfully deleted' };
+  }
+
+  async remove(id: string, userId: string) {
+    const project = await this.findOne(id);
+
+    if (project.creator.id !== userId) {
+      throw new ForbiddenException('You can only delete your own projects');
+    }
+
+    await this.projectRepository.remove(project);
+    return { message: 'Project successfully deleted' };
   }
 }

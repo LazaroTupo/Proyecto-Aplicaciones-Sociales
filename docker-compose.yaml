@@ -1,15 +1,41 @@
+version: '3.8'
+
 services:
+  # Base de Datos Principal - PostgreSQL
   db:
-    image: mysql:8.0
-    container_name: tas_mysql
+    image: postgres:15-alpine
+    container_name: tas_postgres
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: tas_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret_password
+      POSTGRES_DB: impulsatec_db
     ports:
-      - "3306:3306"
+      - "5432:5432"
     volumes:
-      - tas_mysql_data:/var/lib/mysql
+      - tas_postgres_data:/var/lib/postgresql/data
+
+  # Motor de Búsqueda Full-Text - Manticore
+  manticore:
+    image: manticoresearch/manticore:latest
+    container_name: tas_manticore
+    restart: always
+    environment:
+      - EXTRA=1
+    ports:
+      - "9306:9306" # Interfaz SQL
+      - "9308:9308" # Interfaz HTTP/JSON (la que usará NestJS)
+    volumes:
+      - tas_manticore_data:/var/lib/manticore
+
+  # (Opcional) Microservicio de IA
+  # Si quieres levantarlo por Docker en lugar de manual
+  # ai_service:
+  #   build: ./tas-ai
+  #   container_name: tas_ai_service
+  #   ports:
+  #     - "8000:8000"
 
 volumes:
-  tas_mysql_data:
+  tas_postgres_data:
+  tas_manticore_data:

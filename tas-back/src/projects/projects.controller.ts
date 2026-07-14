@@ -1,130 +1,114 @@
-import { Body, Controller, Delete, FileTypeValidator, Get, MaxFileSizeValidator, Param, ParseFilePipe, ParseIntPipe, Patch, Post, Req, UploadedFiles, UseGuards, UseInterceptors, } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Put,
+  Query,
+  UseInterceptors,
+  UploadedFiles,
+  Req,
+} from '@nestjs/common';
 import { ProjectsService } from './projects.service';
 import { CreateProjectDto } from './dto/create-project.dto';
-import { AuthGuard } from '@nestjs/passport';
 import { UpdateProjectDto } from './dto/update-project.dto';
+import { UpdateProjectStatusDto } from './dto/update-project-status.dto';
+import { FindProjectsDto } from './dto/find-projects.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../users/entities/user.entity';
 import { FilesInterceptor } from '@nestjs/platform-express';
-
-import multer from 'multer';
-import { UpdateProjectStatusDto } from './dto/update-status-project.dto';
+import { diskStorage } from 'multer';
+import * as path from 'path';
 
 @Controller('projects')
 export class ProjectsController {
+  constructor(private readonly projectsService: ProjectsService) {}
 
-  constructor(private readonly projectsService: ProjectsService) { }
-
-  @UseGuards(AuthGuard('jwt'))
   @Post()
-  @UseInterceptors(FilesInterceptor('files', 3))
-  async create(
-    @Body() body: CreateProjectDto,
-    @UploadedFiles(
-      new ParseFilePipe({
-        validators: [
-          new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 }),
-          new FileTypeValidator({ fileType: /(pdf|jpg|jpeg|png|docx?)$/ }),
-        ],
-        fileIsRequired: false,
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(
+    FilesInterceptor('sustentos', 10, {
+      limits: { fileSize: 50 * 1024 * 1024 },
+      storage: diskStorage({
+        destination: './uploads/temp',
+        filename: (req, file, cb) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          cb(null, uniqueSuffix + path.extname(file.originalname));
+        },
       }),
-    )
-    files: Express.Multer.File[],
-    @Req() req: any
+    }),
+  )
+  create(
+    @Body() createProjectDto: CreateProjectDto,
+    @Req() req,
+    @UploadedFiles() files: Express.Multer.File[],
   ) {
-    const userId = req.user.id;
-    
-    let descriptions: string[] = [];
-    if (body.fileDescriptions) {
-      try {
-        descriptions = JSON.parse(body.fileDescriptions);
-      } catch {
-        descriptions = [];
-      }
-    }
-
-    const filesWithDescriptions = (files || []).map((file, index) => ({
-      file,
-      description: descriptions[index] ?? '',
-    }));
-
-
-    return this.projectsService.create(body, userId, filesWithDescriptions);
+    return this.projectsService.create(createProjectDto, req.user, files);
   }
 
-  @UseGuards(AuthGuard('jwt'))
-  @Get('notifications')
-  getNotifications(
-    @Req() req: any
-  ) {
-    const userId = req.user.id;
-    return this.projectsService.getNotifications(userId);
+  @Get()
+  // Public endpoint
+  findAll(@Query() query: FindProjectsDto) {
+    return this.projectsService.findAll(query);
   }
 
-  @UseGuards(AuthGuard('jwt'))
-  @Get('allByUser')
-  async getAllById(
-    @Req() req: any
-  ) {
-    const userId = req.user.id;    
-    return this.projectsService.getAllById(userId);
-  }
-
-  
-  @UseGuards(AuthGuard('jwt'))
-  @Get('all')
-  async getAll(
-    @Req() req: any,
-    @Param('id') id: string,
-  ) {
-    const userId = req.user.id;
-    
-    return this.projectsService.getAll(userId);
-  }
-
-  
-  @UseGuards(AuthGuard('jwt'))
   @Get(':id')
-  async getOne(
-    @Param('id') id: string,
-  ) {
+  // Public endpoint
+  findOne(@Param('id') id: string) {
     return this.projectsService.findOne(id);
   }
 
-  @UseGuards(AuthGuard('jwt'))
-  @Delete(':id')
-  async delete(
-    @Param('id', ParseIntPipe) projectId: number,
-    @Req() req: any
-  ) {
-    const userId = req.user.id;
-    return this.projectsService.delete(projectId, userId);
-  }
-
-  @UseGuards(AuthGuard('jwt'))
-  @Patch(':id')
-  async update(
-    @Param('id', ParseIntPipe) projectId: number,
+  @Put(':id')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(
+    FilesInterceptor('sustentos', 10, {
+      storage: diskStorage({
+        destination: './uploads/temp',
+        filename: (req, file, cb) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          cb(null, uniqueSuffix + path.extname(file.originalname));
+        },
+      }),
+    }),
+  )
+  update(
+    @Param('id') id: string,
     @Body() updateProjectDto: UpdateProjectDto,
-    @Req() req: any
+    @Req() req,
+    @UploadedFiles() files: Express.Multer.File[],
   ) {
-    const userId = req.user.id;
-    return this.projectsService.update(projectId, userId, updateProjectDto);
-  }
-
-  @UseGuards(AuthGuard('jwt'))
-  @Post(':id/analyze')
-  async analyze(
-    @Param('id', ParseIntPipe) projectId: number,
-    @Req() req: any
-  ) {
-    const userId = req.user.id;
-    return this.projectsService.analyzeProject(projectId, userId);
+    return this.projectsService.update(id, updateProjectDto, req.user.id, files);
   }
 
   @Patch(':id/status')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   updateStatus(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateProjectStatusDto,
+    @Param('id') id: string,
+    @Body() updateProjectStatusDto: UpdateProjectStatusDto,
   ) {
-    return this.projectsService.updateStatus(id, dto);
+    return this.projectsService.updateStatus(id, updateProjectStatusDto);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  remove(@Param('id') id: string, @Req() req) {
+    return this.projectsService.remove(id, req.user.id);
+  }
+
+  @Delete(':id/files/:filename')
+  @UseGuards(JwtAuthGuard)
+  removeFile(
+    @Param('id') id: string,
+    @Param('filename') filename: string,
+    @Req() req,
+  ) {
+    return this.projectsService.removeFile(id, filename, req.user.id);
   }
 }

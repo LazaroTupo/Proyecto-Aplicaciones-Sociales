@@ -1,128 +1,70 @@
-import { Complexity } from '@prisma/client';
-import { Transform, Type } from 'class-transformer';
-import { 
-  IsNotEmpty, 
-  IsString, 
-  IsNumber, 
-  Min, 
-  IsDateString, 
-  Length, 
-  IsPositive, 
-  IsBoolean,
-  IsOptional
-} from 'class-validator';
-
-export class TierDto {
-  amount!: number;
-  benefit!: string;
-}
-
+import { IsNotEmpty, IsString, IsNumber, Min, MaxLength, IsBoolean, IsOptional, ValidateNested, IsArray } from 'class-validator';
+import { Type, Transform, plainToInstance } from 'class-transformer';
+import { CreateRewardDto } from './create-reward.dto';
 
 export class CreateProjectDto {
+  @IsNotEmpty()
+  @IsString()
+  @MaxLength(255)
+  title: string;
 
-  @IsNotEmpty({ message: 'El título del proyecto es obligatorio.' })
-  @IsString({ message: 'El título debe ser una cadena de texto.' })
-  @Length(5, 100, { message: 'El título debe tener entre 5 y 100 caracteres.' })
-  title!: string;
+  @IsNotEmpty()
+  @IsString()
+  description: string;
 
-  @IsNotEmpty({ message: 'El resumen del proyecto es obligatorio.' })
-  @IsString({ message: 'El resumen debe ser una cadena de texto.' })
-  @Length(5, 100, { message: 'El resumen debe tener entre 5 y 100 caracteres.' })
-  resume!: string;
-
-  @IsNotEmpty({ message: 'El monto objetivo es obligatorio.' })
+  @IsNotEmpty()
   @Type(() => Number)
-  @IsNumber({}, { message: 'El tamano del equipo debe ser un valor numérico.' })
-  teamSize!: number;
+  @IsNumber()
+  @Min(0)
+  targetAmount: number;
 
-  @IsNotEmpty({ message: 'La experiencia del lider es obligatorio.' })
+  @IsNotEmpty()
   @Type(() => Number)
-  @IsNumber({}, { message: 'La experiencia del lider debe ser un valor numérico.' })
-  supervisorExperience!: number;
-
-  @IsNotEmpty({ message: 'El sector es obligatorio.' })
-  @Type(() => Number)
-  @IsNumber({}, { message: 'El sector debe ser un valor numérico.' })
-  sector!: number;
-
-  @IsNotEmpty({ message: 'La cantidad de proyectos similares es obligatorio.' })
-  @Type(() => Number)
-  @IsNumber({}, { message: 'La cantidad de proyectos similares debe ser un valor numérico.' })
-  priorSimilarProjects!: number;
-
-  @IsNotEmpty({ message: 'El nivel TRL es obligatorio.' })
-  @IsNumber({}, { message: 'El TRL debe ser un valor numérico.' })
-  @Type(() => Number)
-  @IsPositive({ message: 'El TRL debe ser positivo.' })
+  @IsNumber()
   @Min(1)
-  trlLevel!: number;
+  durationDays: number;
 
-  @IsNotEmpty({ message: 'El documento técnico es obligatorio.' })
-  @Transform(({ value }) => value === 'true' || value === true)
-  @IsBoolean({ message: 'El documento técnico debe ser verdadero o falso.' })
-  hasTechnicalDoc!: boolean;
-
-  @IsNotEmpty({ message: 'El campo de patentes es obligatorio.' })
-  @Transform(({ value }) => value === 'true' || value === true)
-  @IsBoolean({ message: 'Debe ser verdadero o falso.' })
-  hasPatents!: boolean;
-
-  @IsNotEmpty({ message: 'El campo de video pitch es obligatorio.' })
-  @Transform(({ value }) => value === 'true' || value === true)
-  @IsBoolean({ message: 'Debe ser verdadero o falso.' })
-  hasVideoPitch!: boolean;
-
-  @IsNotEmpty({ message: 'El documento técnico es obligatorio.' })
-  @Transform(({ value }) => value === 'true' || value === true)
-  @IsBoolean({ message: 'El documento técnico debe ser verdadero o falso.' })
-  hasMonetizationModel!: boolean;
-
-  @IsNotEmpty({ message: 'El documento técnico es obligatorio.' })
-  @Transform(({ value }) => value === 'true' || value === true)
-  @IsBoolean({ message: 'El documento técnico debe ser verdadero o falso.' })
-  hasMarketStudy!: boolean;
-
-  @IsNotEmpty({ message: 'El documento técnico es obligatorio.' })
-  @Transform(({ value }) => value === 'true' || value === true)
-  @IsBoolean({ message: 'El documento técnico debe ser verdadero o falso.' })
-  hasDirectCompetitors!: boolean;
-  
-  @IsNotEmpty({ message: 'El monto objetivo es obligatorio.' })
+  @IsNotEmpty()
   @Type(() => Number)
-  @IsNumber({}, { message: 'El monto objetivo debe ser un valor numérico.' })
-  @IsPositive({ message: 'El monto objetivo debe ser un número positivo.' })
-  durationMonths!: number;
-
-  @IsNotEmpty({ message: 'La descripción del proyecto es obligatoria.' })
-  @IsString({ message: 'La descripción debe ser una cadena de texto.' })
-  @Length(20, 1000, { message: 'La descripción debe ser más detallada (entre 20 y 1000 caracteres).' })
-  description!: string;
-
-  @IsNotEmpty({ message: 'La fecha límite de la campaña es obligatoria.' })
-  @IsDateString({}, { message: 'La fecha límite debe ser una fecha válida (formato ISO 8601, ej. YYYY-MM-DD).' })
-  deadLine!: string;
-
-
-  @IsNotEmpty({ message: 'El título del proyecto es obligatorio.' })
-  @IsString({ message: 'El título debe ser una cadena de texto.' })
-  complexity!: Complexity;
-
-    
-  @IsNotEmpty({ message: 'El monto objetivo es obligatorio.' })
-  @Type(() => Number)
-  @IsNumber({}, { message: 'El monto objetivo debe ser un valor numérico.' })
-  @IsPositive({ message: 'El monto objetivo debe ser un número positivo.' })
-  budget!: number;
+  @IsNumber()
+  @Min(1)
+  trlLevel: number;
 
   @IsOptional()
-  @IsString()
-  fileDescriptions?: string;
-
-  @Transform(({ value }) => value === 'true' || value === true)
+  @Transform(({ value }) => {
+    if (value === 'true' || value === true) return true;
+    if (value === 'false' || value === false) return false;
+    return value;
+  })
   @IsBoolean()
-  allowFree!: boolean;
+  hasVideo?: boolean;
+
+  @IsNotEmpty()
+  @IsString()
+  category: string;
 
   @IsOptional()
-  @IsString()
-  tiers: any;
+  @Type(() => Number)
+  @IsNumber()
+  descriptionLength?: number;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateRewardDto)
+  @Transform(({ value }) => {
+    let parsed = value;
+    if (typeof value === 'string') {
+      try {
+        parsed = JSON.parse(value);
+      } catch (e) {
+        return value;
+      }
+    }
+    if (Array.isArray(parsed)) {
+      return parsed.map(item => plainToInstance(CreateRewardDto, item));
+    }
+    return parsed;
+  })
+  rewards?: CreateRewardDto[];
 }

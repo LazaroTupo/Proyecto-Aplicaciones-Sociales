@@ -1,81 +1,97 @@
-import { ConflictException, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 import * as bcrypt from 'bcrypt';
-import { RegisterUserDto } from './login.dto.ts/register.dto';
 
 @Injectable()
 export class AuthService {
-
   constructor(
-    private prisma: PrismaService,
-    private jwtService: JwtService,
-  ) { }
+    private readonly usersService: UsersService,
+    private readonly jwtService: JwtService,
+  ) {}
 
-  async register(data: RegisterUserDto) {
-    const { email, password, name } = data;
-
-    // 1. Verificar si el correo electrónico ya existe en la base de datos
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email },
-    });
-
+  async register(registerDto: RegisterDto) {
+    const { email, password, ...rest } = registerDto;
+    
+    // Check if email is already in use
+    const existingUser = await this.usersService.findByEmail(email);
     if (existingUser) {
-      throw new ConflictException('El correo electrónico ya se encuentra registrado.');
+      throw new BadRequestException('Email already in use');
     }
 
-    try {
-      const saltRounds = 10;
-      const hashedPassword = await bcrypt.hash(password, saltRounds);
+    // Hash the password
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-      const newUser = await this.prisma.user.create({
-        data: {
-          email,
-          passwordHash: hashedPassword,
-          name,
-          role: 'user',
-        },
-      });
-
-      const { passwordHash, ...userWithoutPassword } = newUser;
-
-      return userWithoutPassword;
-
-    } catch (err) {
-      throw new InternalServerErrorException('Ocurrió un error al procesar el registro del usuario.');
-    }
-  }
-
-  async login(email: string, pass: string) {
-
-    const user = await this.prisma.user.findUnique({
-      where: { email },
+    // Create user
+    const newUser = await this.usersService.create({
+      ...rest,
+      email,
+      password: hashedPassword,
     });
 
-    if (!user) {
-      throw new UnauthorizedException('Credenciales inválidas');
-    }
+    // Remove password from returned user object
+    const { password: _, ...userWithoutPassword } = newUser;
 
-    const isPasswordValid = await bcrypt.compare(pass, user.passwordHash);
-
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Credenciales inválidas');
-    }
-
-    const payload = {
-      sub: user.id,
-      email: user.email
-    };
+    // Generate token
+    const payload = { email: newUser.email, sub: newUser.id, role: newUser.role };
+    const accessToken = this.jwtService.sign(payload);
 
     return {
-      access_token: this.jwtService.sign(payload),
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-      }
+      id: newUser.id,
+      email: newUser.email,
+      accessToken,
+      message: 'User registered successfully',
     };
+  }
 
+  async login(loginDto: LoginDto) {
+    const user = await this.usersService.findByEmail(loginDto.email);
+    
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const isPasswordMatching = await bcrypt.compare(loginDto.password, user.password);
+    
+    if (!isPasswordMatching) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const payload = { email: user.email, sub: user.id, role: user.role };
+    
+    const accessToken = this.jwtService.sign(payload);
+    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' }); // Simple refresh token
+
+    const { password: _, ...userWithoutPassword } = user;
+
+    return {
+      accessToken,
+      refreshToken,
+      user: userWithoutPassword,
+    };
+  }
+
+  async refresh(refreshTokenDto: RefreshTokenDto) {
+    try {
+      const payload = await this.jwtService.verifyAsync(refreshTokenDto.refreshToken);
+      const user = await this.usersService.getMe(payload.sub);
+      
+      if (!user) {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
+      
+      const newPayload = { email: user.email, sub: user.id, role: user.role };
+      
+      return {
+        accessToken: this.jwtService.sign(newPayload),
+        refreshToken: this.jwtService.sign(newPayload, { expiresIn: '7d' }),
+      };
+    } catch (e) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
   }
 }

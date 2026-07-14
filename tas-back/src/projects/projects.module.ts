@@ -1,13 +1,20 @@
 import { Module } from '@nestjs/common';
-
-import { PrismaService } from 'src/prisma/prisma.service';
-import { ProjectsService } from './projects.service';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProjectsController } from './projects.controller';
-import { HttpModule } from '@nestjs/axios';
+import { ProjectsService } from './projects.service';
+import { Project } from './entities/project.entity';
+import { Reward } from './entities/reward.entity';
+import { AiPredictionModule } from '../ai-prediction/ai-prediction.module';
+import { ManticoreModule } from '../manticore/manticore.module';
 
 @Module({
-  imports: [HttpModule],
-  providers: [ProjectsService, PrismaService],
-  controllers: [ProjectsController]
+  imports: [
+    TypeOrmModule.forFeature([Project, Reward]),
+    AiPredictionModule,
+    ManticoreModule,
+  ],
+  controllers: [ProjectsController],
+  providers: [ProjectsService],
+  exports: [ProjectsService],
 })
 export class ProjectsModule {}
