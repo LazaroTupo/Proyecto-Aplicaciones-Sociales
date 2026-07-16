@@ -8,6 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
 import { paymentsService } from '@/services/payments';
+import { ProjectReward } from '@/services/projects';
 
 const paymentSchema = z.object({
   amount: z.number().min(1, 'El monto debe ser mayor a 0').max(1000000, 'Monto máximo excedido'),
@@ -26,7 +27,7 @@ interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
   projectId: string;
-  rewards?: Reward[];
+  rewards?: ProjectReward[];
 }
 
 export function PaymentModal({ isOpen, onClose, projectId, rewards = [] }: PaymentModalProps) {

@@ -55,7 +55,9 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
   const handleDeleteConfirm = async () => {
     setIsDeleting(true);
     try {
-      await onDelete();
+      if(onDelete){
+        await onDelete();
+      }
     } finally {
       setIsDeleting(false);
       setDeleteModalOpen(false);
