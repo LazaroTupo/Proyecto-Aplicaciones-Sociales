@@ -26,6 +26,8 @@ export class FindProjectsDto {
   @IsOptional()
   @IsString()
   filter?: string;
+
+  @IsOptional()
   @IsEnum(ProjectStatus)
   status?: ProjectStatus;
 }
