@@ -39,10 +39,10 @@ export default function LoginPage() {
     try {
       const res = await authService.login(data);
       if (res.accessToken) {
-        Cookies.set('accessToken', res.accessToken, { secure: true, sameSite: 'strict' });
+        Cookies.set('accessToken', res.accessToken, { sameSite: 'strict' });
       }
       if (res.refreshToken) {
-        Cookies.set('refreshToken', res.refreshToken, { secure: true, sameSite: 'strict' });
+        Cookies.set('refreshToken', res.refreshToken, { sameSite: 'strict' });
       }
       router.push('/profile');
     } catch (error) {
