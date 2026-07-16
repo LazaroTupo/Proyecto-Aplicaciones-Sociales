@@ -51,11 +51,21 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     const user = await this.usersService.findByEmail(loginDto.email);
     
+    console.log(loginDto.email);
+    console.log(loginDto.password);
+    
+    console.log('user');
+    console.log(user);
+    
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
     const isPasswordMatching = await bcrypt.compare(loginDto.password, user.password);
+
+    console.log('isPasswordMatching');
+    console.log(isPasswordMatching);
+    
     
     if (!isPasswordMatching) {
       throw new UnauthorizedException('Invalid credentials');
