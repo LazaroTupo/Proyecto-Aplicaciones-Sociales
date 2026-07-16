@@ -81,9 +81,9 @@ api.interceptors.response.use(
         const newAccessToken = data.accessToken;
         const newRefreshToken = data.refreshToken;
         
-        Cookies.set('accessToken', newAccessToken, { secure: true, sameSite: 'strict' });
+        Cookies.set('accessToken', newAccessToken, { sameSite: 'strict' });
         if (newRefreshToken) {
-          Cookies.set('refreshToken', newRefreshToken, { secure: true, sameSite: 'strict' });
+          Cookies.set('refreshToken', newRefreshToken, { sameSite: 'strict' });
         }
 
         api.defaults.headers.common['Authorization'] = 'Bearer ' + newAccessToken;
