@@ -80,16 +80,16 @@ export class ProjectsService {
       whereClause.creator = { id: creatorId };
     }
     
-    if (filter) {
-      console.log('filter');
-      console.log(filter);
-      whereClause.status = filter;
-    }
-    
     if (query.status) {
       whereClause.status = query.status;
     } else if (!creatorId) {
-      whereClause.status = In([ProjectStatus.FUNDING, ProjectStatus.FUNDED, ProjectStatus.CLOSED]);
+      if(filter){
+        console.log('filter');
+        console.log(filter);
+        whereClause.status = filter;
+      }else{
+        whereClause.status = In([ProjectStatus.FUNDING, ProjectStatus.FUNDED, ProjectStatus.CLOSED]);
+      }
     }
     let manticoreUuids: string[] = [];
 
