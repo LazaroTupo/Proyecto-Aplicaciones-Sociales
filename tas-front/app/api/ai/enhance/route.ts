@@ -6,7 +6,7 @@ const openai = new OpenAI({
   baseURL: 'https://openrouter.ai/api/v1',
   apiKey: process.env.OPENROUTER_API_KEY || '',
   defaultHeaders: {
-    'HTTP-Referer': process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000', // Required for OpenRouter rankings
+    'HTTP-Referer': 'http://213.210.20.7:3002', // Required for OpenRouter rankings
     'X-Title': 'ImpulsaTec Crowdfunding Platform', // Required for OpenRouter rankings
   },
 });
