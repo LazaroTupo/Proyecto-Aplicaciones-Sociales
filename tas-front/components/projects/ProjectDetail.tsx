@@ -11,16 +11,24 @@ import { toast } from 'sonner';
 
 interface ProjectDetailProps {
   project: Project;
-  isOwner: boolean;
-  onEdit: () => void;
-  onDelete: () => Promise<void>;
+  isOwner?: boolean;
+  isAdmin?: boolean;
+  onEdit?: () => void;
+  onDelete?: () => Promise<void>;
+  onPublish?: () => Promise<void>;
+  onApprove?: () => Promise<void>;
+  onReject?: () => Promise<void>;
 }
 
 export const ProjectDetail: React.FC<ProjectDetailProps> = ({
   project,
-  isOwner,
+  isOwner = false,
+  isAdmin = false,
   onEdit,
-  onDelete
+  onDelete,
+  onPublish,
+  onApprove,
+  onReject
 }) => {
   const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
   const [isPaymentModalOpen, setPaymentModalOpen] = useState(false);
@@ -56,23 +64,60 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4 py-8">
-      {/* Header Actions for Owner */}
-      {isOwner && (
-        <div className="flex justify-end space-x-4 mb-6">
-          <button
-            onClick={onEdit}
-            className="flex items-center px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg text-white font-medium transition-colors backdrop-blur-md"
-          >
-            <Edit3 size={18} className="mr-2" /> Editar Proyecto
-          </button>
-          <button
-            onClick={() => setDeleteModalOpen(true)}
-            className="flex items-center px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-lg text-red-400 font-medium transition-colors backdrop-blur-md"
-          >
-            <Trash2 size={18} className="mr-2" /> Eliminar
-          </button>
+      {/* Header Actions for Owner and Admin */}
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          {/* Status Badge */}
+          {project.status === 'draft' && <span className="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-gray-500/20 text-gray-300 border border-gray-500/30">Borrador</span>}
+          {project.status === 'review' && <span className="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">En Revisión</span>}
+          {project.status === 'funding' && <span className="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-green-500/20 text-green-300 border border-green-500/30">En Recaudación</span>}
         </div>
-      )}
+        <div className="flex justify-end space-x-4">
+          {/* Admin Actions */}
+          {isAdmin && project.status === 'review' && (
+            <>
+              <button
+                onClick={onApprove}
+                className="flex items-center px-4 py-2 bg-green-500/20 hover:bg-green-500/30 border border-green-500/30 rounded-lg text-green-400 font-medium transition-colors backdrop-blur-md"
+              >
+                <ShieldCheck size={18} className="mr-2" /> Aprobar Proyecto
+              </button>
+              <button
+                onClick={onReject}
+                className="flex items-center px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-lg text-red-400 font-medium transition-colors backdrop-blur-md"
+              >
+                <X size={18} className="mr-2" /> Rechazar
+              </button>
+            </>
+          )}
+
+          {/* Owner Actions */}
+          {isOwner && (
+            <>
+              {project.status === 'draft' && (
+                <button
+                  onClick={onPublish}
+                  className="flex items-center px-4 py-2 bg-brand-500 hover:bg-brand-600 rounded-lg text-white font-medium transition-colors shadow-lg shadow-brand-500/25"
+                >
+                  <Target size={18} className="mr-2" /> Enviar a Revisión
+                </button>
+              )}
+              <button
+                onClick={onEdit}
+                className="flex items-center px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg text-white font-medium transition-colors backdrop-blur-md"
+              >
+                <Edit3 size={18} className="mr-2" /> Editar Proyecto
+              </button>
+              <button
+                onClick={() => setDeleteModalOpen(true)}
+                className="flex items-center px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-lg text-red-400 font-medium transition-colors backdrop-blur-md"
+              >
+                <Trash2 size={18} className="mr-2" /> Eliminar
+              </button>
+            </>
+          )}
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column - Main Info */}

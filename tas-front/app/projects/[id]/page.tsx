@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useProjects } from '@/hooks/useProjects';
+import { useUser } from '@/hooks/useUsers';
 import { ProjectDetail } from '@/components/projects/ProjectDetail';
 import { ProjectDetailSkeleton } from '@/components/projects/ProjectDetailSkeleton';
 import { toast } from 'sonner';
@@ -13,12 +14,13 @@ export default function CampaignPage() {
   const router = useRouter();
   const id = params.id as string;
   
-  const { fetchProjectById, deleteProject, loading, error } = useProjects();
+  const { fetchProjectById, deleteProject, publishProject, updateProjectStatus, loading, error } = useProjects();
+  const { user } = useUser();
   const [project, setProject] = useState<any>(null);
   const { interact } = useInteract();
   
-  // Dummy check for ownership, in a real app this would compare with Auth context user.id
-  const isOwner = true; // Temporary for demonstration
+  const isOwner = user?.id === project?.creator?.id;
+  const isAdmin = user?.role === 'admin';
 
   useEffect(() => {
     if (id) {
@@ -48,6 +50,41 @@ export default function CampaignPage() {
     }
   };
 
+  const handlePublish = async () => {
+    try {
+      await publishProject(id);
+      toast.success('Proyecto enviado a revisión exitosamente');
+      // Optimistic UI update or reload
+      setProject({ ...project, status: 'review' });
+    } catch (err) {
+      // Error handled by hook
+    }
+  };
+
+  const handleApprove = async () => {
+    try {
+      const updated = await updateProjectStatus(id, 'funding');
+      if (updated) {
+        toast.success('Proyecto aprobado exitosamente');
+        setProject(updated);
+      }
+    } catch (err) {
+      // Error handled by hook
+    }
+  };
+
+  const handleReject = async () => {
+    try {
+      const updated = await updateProjectStatus(id, 'draft');
+      if (updated) {
+        toast.warning('Proyecto rechazado y devuelto a borrador');
+        setProject(updated);
+      }
+    } catch (err) {
+      // Error handled by hook
+    }
+  };
+
   if (loading || !project) {
     if (error) {
       return (
@@ -74,8 +111,12 @@ export default function CampaignPage() {
       <ProjectDetail
         project={project}
         isOwner={isOwner}
+        isAdmin={isAdmin}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        onPublish={handlePublish}
+        onApprove={handleApprove}
+        onReject={handleReject}
       />
     </main>
   );

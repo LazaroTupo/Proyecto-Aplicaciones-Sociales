@@ -80,6 +80,34 @@ export const useProjects = () => {
     }
   }, []);
 
+  const publishProject = useCallback(async (id: string): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+    try {
+      await projectsService.publishProject(id);
+      return true;
+    } catch (err: any) {
+      setError(err.response?.data?.message || err.message || 'Error publishing project');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const updateProjectStatus = useCallback(async (id: string, status: string): Promise<Project | null> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const project = await projectsService.updateProjectStatus(id, status);
+      return project;
+    } catch (err: any) {
+      setError(err.response?.data?.message || err.message || 'Error updating project status');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   return {
     loading,
     error,
@@ -88,5 +116,7 @@ export const useProjects = () => {
     createProject,
     updateProject,
     deleteProject,
+    publishProject,
+    updateProjectStatus,
   };
 };

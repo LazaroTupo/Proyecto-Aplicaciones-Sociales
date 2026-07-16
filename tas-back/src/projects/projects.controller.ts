@@ -86,6 +86,12 @@ export class ProjectsController {
     return this.projectsService.update(id, updateProjectDto, req.user.id, files);
   }
 
+  @Patch(':id/publish')
+  @UseGuards(JwtAuthGuard)
+  publish(@Param('id') id: string, @Req() req) {
+    return this.projectsService.publish(id, req.user.id);
+  }
+
   @Patch(':id/status')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
