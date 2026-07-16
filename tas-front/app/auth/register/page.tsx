@@ -19,7 +19,7 @@ const registerSchema = z.object({
   lastName: z.string().min(2, 'El apellido debe tener al menos 2 caracteres'),
   email: z.string().email('Correo electrónico inválido'),
   password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
-  role: z.enum(['CREATOR', 'BACKER'], {
+  role: z.enum(['creator', 'backer'], {
     message: 'Selecciona un rol válido',
   }),
 });
@@ -37,7 +37,7 @@ export default function RegisterPage() {
   } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      role: 'BACKER',
+      role: 'backer',
     }
   });
 
@@ -114,8 +114,8 @@ export default function RegisterPage() {
               `}
               {...register('role')}
             >
-              <option value="BACKER" className="bg-gray-900 text-white">Inversor (Backer)</option>
-              <option value="CREATOR" className="bg-gray-900 text-white">Creador de Proyectos</option>
+              <option value="backer" className="bg-gray-900 text-white">Inversor (Backer)</option>
+              <option value="creator" className="bg-gray-900 text-white">Creador de Proyectos</option>
             </select>
             {/* Custom arrow for select */}
             <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
