@@ -9,6 +9,7 @@ import { useProjects } from '@/hooks/useProjects';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { AiEvaluationPanel } from '@/components/predictions/AiEvaluationPanel';
 import { Project } from '@/services/projects';
+import { Button } from '@/components/ui/Button';
 
 export default function CreatorProjectDashboard() {
   const params = useParams();
