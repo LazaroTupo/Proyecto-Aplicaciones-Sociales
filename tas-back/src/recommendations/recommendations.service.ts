@@ -13,7 +13,7 @@ export class RecommendationsService {
     private readonly interactionRepository: Repository<Interaction>,
     @InjectRepository(Project)
     private readonly projectRepository: Repository<Project>,
-  ) {}
+  ) { }
 
   async getFeedForUser(userId: string, query: FeedQueryDto): Promise<Project[]> {
     const interactions = await this.interactionRepository.find({
@@ -32,18 +32,34 @@ export class RecommendationsService {
       // Cold Start
       projects.sort((a, b) => {
         const diffRaised = Number(b.raisedAmount) - Number(a.raisedAmount);
-        if (diffRaised !== 0) return diffRaised;
-        return b.createdAt.getTime() - a.createdAt.getTime();
+
+        if (diffRaised !== 0) {
+          return diffRaised;
+        }
+
+        const dateA = a.createdAt?.getTime() ?? 0;
+        const dateB = b.createdAt?.getTime() ?? 0;
+
+        return dateB - dateA;
       });
+
+
     } else {
       // Match Score Logic based on user's past interactions
       const preferredTrls = new Set(interactions.map(i => i.project?.trlLevel).filter(t => t != null));
       const preferredCreators = new Set(interactions.map(i => i.project?.creator?.id).filter(Boolean));
 
-      const scoredProjects = projects.map(project => {
+      const scoredProjects = projects.map((project) => {
         let score = 0;
-        if (preferredTrls.has(project.trlLevel)) score += 5;
-        if (project.creator && preferredCreators.has(project.creator.id)) score += 10;
+
+        if (project.trlLevel && preferredTrls.has(project.trlLevel)) {
+          score += 5;
+        }
+
+        if (project.creator && preferredCreators.has(project.creator.id)) {
+          score += 10;
+        }
+
         return { project, score };
       });
 

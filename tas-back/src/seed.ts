@@ -11,6 +11,7 @@ import { DataSource } from 'typeorm';
 import { Reward } from './projects/entities/reward.entity';
 import { RecommendationsService } from './recommendations/recommendations.service';
 import { InteractionType } from './recommendations/entities/interaction.entity';
+import { ProjectStatus } from './projects/entities/project.entity';
 
 async function bootstrap() {
   const logger = new Logger('Seeder');
@@ -85,9 +86,7 @@ async function bootstrap() {
       }
     }
     logger.log(`Total de usuarios disponibles en el sistema (generatedUsers): ${generatedUsers.length}`);
-    // --- FIN INYECCIÓN MÓDULO AUTH ---
-    
-    // --- INICIO INYECCIÓN MÓDULO USUARIOS ---
+
     logger.log('Enriqueciendo perfiles de usuarios con biografías y avatares realistas...');
     const biosCreadores = [
       'Ingeniera de software apasionada por las tecnologías limpias. Con más de 5 años en la industria del desarrollo sostenible, busco revolucionar cómo gestionamos el agua.',
@@ -151,6 +150,7 @@ async function bootstrap() {
         hasVideo: true,
         category: 'Tecnología Sostenible',
         descriptionLength: 220,
+        status: ProjectStatus.FUNDING,
         rewards: [
           { amount: 50, description: 'Certificado digital de plantación de 10 árboles.' },
           { amount: 200, description: 'Drone en miniatura impreso en 3D y reporte trimestral.' }
@@ -165,6 +165,7 @@ async function bootstrap() {
         hasVideo: true,
         category: 'Salud y Bienestar',
         descriptionLength: 210,
+        status: ProjectStatus.FUNDING,
         rewards: [
           { amount: 30, description: 'Mención en nuestra página web como pionero.' },
           { amount: 150, description: 'Una VitaBand de primera edición (Early Bird).' }
@@ -179,6 +180,7 @@ async function bootstrap() {
         hasVideo: false,
         category: 'Impacto Social',
         descriptionLength: 170,
+        status: ProjectStatus.FUNDING,
         rewards: [
           { amount: 25, description: 'Filtro básico de supervivencia.' },
           { amount: 100, description: 'Pack familiar de 5 filtros y botella térmica.' }
@@ -193,6 +195,7 @@ async function bootstrap() {
         hasVideo: true,
         category: 'Energías Renovables',
         descriptionLength: 205,
+        status: ProjectStatus.FUNDING,
         rewards: [
           { amount: 15, description: 'Recetario digital de cocina solar.' },
           { amount: 80, description: 'Una cocina SolarCook donada a tu nombre a una familia.' }
@@ -207,6 +210,7 @@ async function bootstrap() {
         hasVideo: true,
         category: 'Educación',
         descriptionLength: 185,
+        status: ProjectStatus.FUNDING,
         rewards: [
           { amount: 20, description: 'Manual interactivo de robótica.' },
           { amount: 120, description: 'Kit completo CodeKids enviado a tu casa.' }
@@ -260,51 +264,51 @@ async function bootstrap() {
 
     let investmentCount = 0;
 
-    for (const project of generatedProjects) {
-      try {
-        // Aseguramos que el proyecto pueda recibir aportes
-        await dataSource.query(`UPDATE projects SET status = 'funding' WHERE id = $1`, [project.id]);
+    // for (const project of generatedProjects) {
+    //   try {
+    //     // Aseguramos que el proyecto pueda recibir aportes
+    //     await dataSource.query(`UPDATE projects SET status = 'funding' WHERE id = $1`, [project.id]);
         
-        const rewards = await dataSource.manager.find(Reward, {
-            where: { project: { id: project.id } },
-            order: { amount: 'ASC' }
-        });
+    //     const rewards = await dataSource.manager.find(Reward, {
+    //         where: { project: { id: project.id } },
+    //         order: { amount: 'ASC' }
+    //     });
 
-        // 1 a 3 inversores aleatorios por proyecto
-        const numInvestors = Math.floor(Math.random() * 3) + 1;
+    //     // 1 a 3 inversores aleatorios por proyecto
+    //     const numInvestors = Math.floor(Math.random() * 3) + 1;
         
-        for(let j = 0; j < numInvestors; j++) {
-           const backer = backers[Math.floor(Math.random() * backers.length)];
-           const investmentData = realisticInvestments[Math.floor(Math.random() * realisticInvestments.length)];
+    //     for(let j = 0; j < numInvestors; j++) {
+    //        const backer = backers[Math.floor(Math.random() * backers.length)];
+    //        const investmentData = realisticInvestments[Math.floor(Math.random() * realisticInvestments.length)];
            
-           let rewardId: string | undefined = undefined;
-           if (investmentData.useReward && rewards && rewards.length > 0) {
-              const validRewards = rewards.filter(r => Number(r.amount) <= investmentData.amount);
-              if (validRewards.length > 0) {
-                 rewardId = validRewards[validRewards.length - 1].id;
-              }
-           }
+    //        let rewardId: string | undefined = undefined;
+    //        if (investmentData.useReward && rewards && rewards.length > 0) {
+    //           const validRewards = rewards.filter(r => Number(r.amount) <= investmentData.amount);
+    //           if (validRewards.length > 0) {
+    //              rewardId = validRewards[validRewards.length - 1].id;
+    //           }
+    //        }
 
-           try {
-              // 1. Crear Orden
-              const pledgeResult = await paymentsService.createPledge(project.id, backer.id, {
-                 amount: investmentData.amount,
-                 rewardId: rewardId
-              });
+    //        try {
+    //           // 1. Crear Orden
+    //           const pledgeResult = await paymentsService.createPledge(project.id, backer.id, {
+    //              amount: investmentData.amount,
+    //              rewardId: rewardId
+    //           });
               
-              // 2. Capturar Pago
-              await paymentsService.capturePayPalOrder(pledgeResult.paypalOrderId);
+    //           // 2. Capturar Pago
+    //           await paymentsService.capturePayPalOrder(pledgeResult.paypalOrderId);
               
-              logger.log(`Aporte de $${investmentData.amount} exitoso: ${backer.firstName} invirtió en "${project.title}"`);
-              investmentCount++;
-           } catch(e: any) {
-              logger.error(`Error simulando aporte en "${project.title}" por ${backer.firstName}: ${e.message}`);
-           }
-        }
-      } catch (e: any) {
-        logger.error(`Error general procesando inversiones para ${project.title}: ${e.message}`);
-      }
-    }
+    //           logger.log(`Aporte de $${investmentData.amount} exitoso: ${backer.firstName} invirtió en "${project.title}"`);
+    //           investmentCount++;
+    //        } catch(e: any) {
+    //           logger.error(`Error simulando aporte en "${project.title}" por ${backer.firstName}: ${e.message}`);
+    //        }
+    //     }
+    //   } catch (e: any) {
+    //     logger.error(`Error general procesando inversiones para ${project.title}: ${e.message}`);
+    //   }
+    // }
     logger.log(`Se han procesado un total de ${investmentCount} inversiones de prueba.`);
     // --- FIN INYECCIÓN MÓDULO PAGOS ---
 
@@ -472,17 +476,17 @@ async function bootstrap() {
         }
 
         // 3. Si es creador, simular una alerta de hito alcanzado
-        if (u.role === UserRole.CREATOR && Math.random() > 0.6) {
-           await notificationRepository.save(
-            notificationRepository.create({
-              user: { id: u.id },
-              type: 'milestone_reached',
-              message: `¡Excelentes noticias, ${u.firstName}! Tu proyecto está ganando tracción y ha superado un nuevo hito de visitas hoy.`,
-              isRead: false
-            })
-          );
-          notifCount++;
-        }
+        // if (u.role === UserRole.CREATOR && Math.random() > 0.6) {
+        //    await notificationRepository.save(
+        //     notificationRepository.create({
+        //       user: { id: u.id },
+        //       type: 'milestone_reached',
+        //       message: `¡Excelentes noticias, ${u.firstName}! Tu proyecto está ganando tracción y ha superado un nuevo hito de visitas hoy.`,
+        //       isRead: false
+        //     })
+        //   );
+        //   notifCount++;
+        // }
       } catch (e: any) {
         logger.error(`Error generando notificaciones de bandeja para ${u.firstName}: ${e.message}`);
       }

@@ -3,6 +3,7 @@ import { User } from '../../users/entities/user.entity';
 import { Reward } from './reward.entity';
 import { Pledge } from '../../payments/entities/pledge.entity';
 import { Prediction } from '../../predictions/entities/prediction.entity';
+import { IsOptional } from 'class-validator';
 
 export enum ProjectStatus {
   DRAFT = 'draft',
@@ -15,65 +16,84 @@ export enum ProjectStatus {
 @Entity('projects')
 export class Project {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
+  @IsOptional()
   @Column({ type: 'varchar', length: 255 })
-  title: string;
+  title?: string;
 
+  @IsOptional()
   @Column({ type: 'text' })
-  description: string;
+  description?: string;
 
+  @IsOptional()
   @Column({ type: 'decimal', precision: 10, scale: 2 })
-  targetAmount: number;
+  targetAmount?: number;
 
+  @IsOptional()
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
-  raisedAmount: number;
+  raisedAmount?: number;
 
+  @IsOptional()
   @Column({ type: 'int' })
-  durationDays: number;
+  durationDays?: number;
 
+  @IsOptional()
   @Column({ type: 'int' })
-  trlLevel: number;
+  trlLevel?: number;
 
+  @IsOptional()
   @Column({ type: 'boolean', default: false })
-  hasVideo: boolean;
+  hasVideo?: boolean;
 
+  @IsOptional()
   @Column({ type: 'varchar', length: 100, nullable: true })
-  category: string;
+  category?: string;
 
+  @IsOptional()
   @Column({ type: 'int', nullable: true })
-  descriptionLength: number;
+  descriptionLength?: number;
 
+  @IsOptional()
   @Column({ type: 'float', nullable: true })
-  aiSuccessProbability: number;
+  aiSuccessProbability?: number;
 
+  @IsOptional()
   @Column({ type: 'float', nullable: true })
-  aiFeasibilityIndex: number;
+  aiFeasibilityIndex?: number;
 
+  @IsOptional()
   @Column({ type: 'simple-array', nullable: true })
-  aiRecommendations: string[];
-
+  aiRecommendations?: string[];
+  
+  @IsOptional()
   @Column({ type: 'simple-array', nullable: true })
-  documentUrls: string[];
+  documentUrls?: string[];
 
+  @IsOptional()
   @Column({ type: 'enum', enum: ProjectStatus, default: ProjectStatus.DRAFT })
-  status: ProjectStatus;
+  status?: ProjectStatus;
 
   @ManyToOne(() => User, (user) => user.projects)
-  creator: User;
+  creator!: User;
 
+  @IsOptional()
   @OneToMany(() => Reward, (reward) => reward.project, { cascade: true })
-  rewards: Reward[];
+  rewards?: Reward[];
 
+  @IsOptional()
   @OneToMany(() => Pledge, (pledge) => pledge.project)
-  pledges: Pledge[];
+  pledges?: Pledge[];
 
+  @IsOptional()
   @OneToOne(() => Prediction, (prediction) => prediction.project, { cascade: true })
-  prediction: Prediction;
+  prediction?: Prediction;
 
+  @IsOptional()
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt?: Date;
 
+  @IsOptional()
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt?: Date;
 }

@@ -19,18 +19,21 @@ export class ProjectsService {
     private readonly projectRepository: Repository<Project>,
     private readonly aiPredictionService: AiPredictionService,
     private readonly manticoreService: ManticoreService,
-  ) {}
+  ) { }
 
   async create(createProjectDto: CreateProjectDto, user: User, files: Express.Multer.File[]) {
     const descriptionLength = createProjectDto.descriptionLength ?? createProjectDto.description?.length ?? 0;
-    
+
     // Llamar al microservicio de IA para predecir éxito
+    console.log('createProjectDto');
+    console.log(createProjectDto);
+
     const aiResult = await this.aiPredictionService.predict({
-      targetAmount: createProjectDto.targetAmount,
-      durationDays: createProjectDto.durationDays,
-      trlLevel: createProjectDto.trlLevel,
+      targetAmount: createProjectDto.targetAmount ?? 0,
+      durationDays: createProjectDto.durationDays ?? 0,
+      trlLevel: createProjectDto.trlLevel ?? 0,
       hasVideo: createProjectDto.hasVideo || false,
-      category: createProjectDto.category,
+      category: createProjectDto.category ?? "",
       descriptionLength,
     });
 
@@ -55,7 +58,7 @@ export class ProjectsService {
         await fs.unlink(file.path);
         fileNames.push(file.originalname);
       }
-      
+
       savedProject.documentUrls = fileNames;
       await this.projectRepository.save(savedProject);
     }
@@ -66,16 +69,23 @@ export class ProjectsService {
   }
 
   async findAll(query: FindProjectsDto) {
-    const { page = 1, limit = 10, search, creatorId } = query;
+    const { page = 1, limit = 10, search, creatorId, filter } = query;
     const skip = (page - 1) * limit;
-    
+
     let whereClause: any = {};
     if (creatorId) {
       whereClause.creator = { id: creatorId };
     }
+    if (filter) {
+      console.log('filter');
+      console.log(filter);
+      whereClause.status = filter;
+    }
     let manticoreUuids: string[] = [];
 
     if (search) {
+
+
       manticoreUuids = await this.manticoreService.search(search);
       if (manticoreUuids.length === 0) {
         return { data: [], total: 0, page, lastPage: 0 };
@@ -90,7 +100,6 @@ export class ProjectsService {
       order: { createdAt: 'DESC' },
     });
 
-    // Reorder data based on Manticore relevance if search was used
     let finalData = data;
     if (search && manticoreUuids.length > 0) {
       finalData = data.sort((a, b) => {
@@ -103,6 +112,57 @@ export class ProjectsService {
       total,
       page,
       lastPage: Math.ceil(total / limit),
+    };
+  }
+
+  async getStats() {
+
+    const [byCategoryRaw, byStatusRaw, projects] = await Promise.all([
+      this.projectRepository
+        .createQueryBuilder('project')
+        .select('project.category', 'category')
+        .addSelect('COUNT(*)', 'count')
+        .groupBy('project.category')
+        .getRawMany(),
+
+      this.projectRepository
+        .createQueryBuilder('project')
+        .select('project.status', 'status')
+        .addSelect('COUNT(*)', 'count')
+        .groupBy('project.status')
+        .getRawMany(),
+
+      this.projectRepository.find({
+        select: {
+          aiSuccessProbability: true,
+        },
+      }),
+    ]);
+
+    const buckets = { '0-20': 0, '21-40': 0, '41-60': 0, '61-80': 0, '81-100': 0 };
+    for (const p of projects) {
+      if (p.aiSuccessProbability == null) continue;
+      const val = p.aiSuccessProbability;
+      if (val <= 20) buckets['0-20']++;
+      else if (val <= 40) buckets['21-40']++;
+      else if (val <= 60) buckets['41-60']++;
+      else if (val <= 80) buckets['61-80']++;
+      else buckets['81-100']++;
+    }
+
+    return {
+      byCategory: byCategoryRaw.map((c) => ({
+        category: c.category,
+        count: parseInt(c.count, 10),
+      })),
+      byStatus: byStatusRaw.map((s) => ({
+        status: s.status,
+        count: parseInt(s.count, 10),
+      })),
+      byAiSuccessProbability: Object.entries(buckets).map(([range, count]) => ({
+        range,
+        count,
+      })),
     };
   }
 
@@ -145,7 +205,7 @@ export class ProjectsService {
         await fs.unlink(file.path);
         fileNames.push(file.originalname);
       }
-      
+
       updatedProject.documentUrls = [...(project.documentUrls || []), ...fileNames];
       await this.projectRepository.save(updatedProject);
     }
@@ -158,7 +218,7 @@ export class ProjectsService {
   async updateStatus(id: string, updateProjectStatusDto: UpdateProjectStatusDto) {
     const project = await this.findOne(id);
     project.status = updateProjectStatusDto.status;
-    
+
     const updatedProject = await this.projectRepository.save(project);
 
     // TODO: Manticore Search - Sync updated status to index
@@ -185,9 +245,9 @@ export class ProjectsService {
     try {
       const filePath = path.join(process.cwd(), 'uploads', 'projects', project.id, filename);
       await fs.unlink(filePath);
-    } catch (error) {
+    } catch (error: any) {
       // Ignore if file doesn't exist on disk
-      console.error(`Could not delete file ${filename} from disk:`, error.message);
+      console.error(`Could not delete file ${filename} from disk:`, error.message ?? "");
     }
 
     return { message: 'File successfully deleted' };

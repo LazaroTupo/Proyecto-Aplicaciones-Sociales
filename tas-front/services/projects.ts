@@ -32,6 +32,12 @@ export interface Project {
   updatedAt?: string;
 }
 
+export interface ProjectStats {
+  byCategory: { category: string; count: number }[];
+  byStatus: { status: string; count: number }[];
+  byAiSuccessProbability: { range: string; count: number }[];
+}
+
 export interface ProjectsResponse {
   data: Project[];
   total: number;
@@ -44,11 +50,17 @@ export interface GetProjectsParams {
   limit?: number;
   search?: string;
   creatorId?: string;
+  filter?: string;
 }
 
 export const projectsService = {
   getProjects: async (params?: GetProjectsParams): Promise<ProjectsResponse> => {
     const { data } = await api.get('/projects', { params });
+    return data;
+  },
+
+  getProjectStats: async (): Promise<ProjectStats> => {
+    const { data } = await api.get('/projects/stats');
     return data;
   },
 

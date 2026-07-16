@@ -21,4 +21,8 @@ export class FindProjectsDto {
   @IsOptional()
   @IsUUID()
   creatorId?: string;
+
+  @IsOptional()
+  @IsString()
+  filter?: string;
 }

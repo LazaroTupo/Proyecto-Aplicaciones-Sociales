@@ -63,7 +63,6 @@ export const useRecommendationsFeed = () => {
 export const useInteract = () => {
   const interact = useCallback((projectId: string, type: 'view' | 'like') => {
     try {
-      // Fire and forget (silent background request)
       recommendationsService.interact({ projectId, interactionType: type }).catch(err => {
          console.warn('Failed to register interaction silently:', err.message);
       });

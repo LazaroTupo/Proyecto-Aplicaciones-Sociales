@@ -4,6 +4,9 @@ import {
   OnGatewayConnection,
   OnGatewayDisconnect,
   OnGatewayInit,
+  SubscribeMessage,
+  MessageBody,
+  ConnectedSocket
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
@@ -18,11 +21,13 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   server: Server;
 
   private readonly logger = new Logger(NotificationsGateway.name);
-  
+
   // Mapeo de userId -> socketId
   private activeSockets = new Map<string, string>();
 
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(
+    private readonly jwtService: JwtService,
+  ) { }
 
   afterInit(server: Server) {
     this.logger.log('NotificationsGateway Initialized');
@@ -31,20 +36,22 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   async handleConnection(client: Socket) {
     try {
       const token = this.extractTokenFromClient(client);
-      
+
       if (!token) {
         throw new Error('No token provided');
       }
 
       const payload = this.jwtService.verify(token);
-      const userId = payload.sub; 
-      
+      const userId = payload.sub;
+
       if (!userId) {
         throw new Error('Invalid token payload');
       }
 
       // Guardar en el mapeo
       this.activeSockets.set(userId, client.id);
+      console.log('AQUQUII');
+
       this.logger.log(`Client connected: ${client.id} - User ID: ${userId}`);
     } catch (error: any) {
       this.logger.error(`Connection rejected: ${client.id} - ${error.message}`);
@@ -82,5 +89,39 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
       return tokenQuery as string;
     }
     return null;
+  }
+
+  @SubscribeMessage('project_view')
+  async handleProjectView(
+    @MessageBody() data: {
+      projectId: string;
+      ownerId: string;
+      title: string;
+    },
+    @ConnectedSocket() client: Socket,
+  ) {
+
+    const token = this.extractTokenFromClient(client);
+
+    if (!token) return;
+
+    const payload = this.jwtService.verify(token);
+    const viewerId = payload.sub;
+
+
+    if (viewerId === data.ownerId) {
+      return;
+    }
+
+
+    this.sendNotificationToUser(
+      data.ownerId,
+      'project_viewed',
+      {
+        message: `Hay alguien viendo tu proyecto ${data.title}`,
+        projectId: data.projectId,
+        title: data.title
+      }
+    );
   }
 }

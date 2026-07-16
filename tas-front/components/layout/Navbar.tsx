@@ -8,6 +8,7 @@ import { NotificationDropdown } from './NotificationDropdown';
 import { authService } from '@/services/authService';
 
 import { usePathname } from 'next/navigation';
+import { User } from 'lucide-react';
 
 export const Navbar = () => {
   const pathname = usePathname();
@@ -48,17 +49,24 @@ export const Navbar = () => {
               <>
                 <NotificationDropdown />
                 <Link 
-                  href="/profile"
+                  href="/"
                   className="bg-brand-600 hover:bg-brand-500 text-white px-5 py-2 rounded-full font-medium transition-all duration-200 text-sm shadow-[0_0_15px_rgba(109,40,217,0.5)]"
                 >
                   Dashboard
                 </Link>
                 <button
                   onClick={() => authService.logout()}
-                  className="text-gray-300 hover:text-red-400 transition-colors duration-200 font-medium text-sm ml-2"
+                  className="text-gray-300 hover:text-red-400 transition-colors duration-200 font-medium text-sm ml-2 cursor-pointer"
                 >
                   Cerrar Sesión
                 </button>
+                <Link 
+                  href="/profile"
+                  className=" text-white px-5 py-2 rounded-full font-medium transition-all duration-200 text-sm shadow-[0_0_15px_rgba(109,40,217,0.5)]"
+                >
+                  <User className='cursor-pointer'/>
+                </Link>
+                
               </>
             ) : isClient && !isAuthenticated ? (
               <>

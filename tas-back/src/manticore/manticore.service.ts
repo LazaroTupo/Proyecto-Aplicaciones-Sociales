@@ -68,7 +68,7 @@ export class ManticoreService implements OnModuleInit {
           index: 'proyectos',
           query: {
             match: {
-              '*': queryText,
+              '*': `${queryText}*`,
             },
           },
           _source: ['project_id'],

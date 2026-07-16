@@ -51,7 +51,7 @@ export default function PredictionsPage() {
           <Link href="/profile">
             <button className="flex items-center text-sm text-zinc-400 hover:text-white transition-colors mb-4 group">
               <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-              Volver al Dashboard
+              Volver
             </button>
           </Link>
           <div className="flex items-center space-x-3 mb-2">

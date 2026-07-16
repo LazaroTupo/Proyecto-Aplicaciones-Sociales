@@ -13,10 +13,26 @@ export const ProjectGrid: React.FC = () => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
+  const [filterSelected, setFilterSelected] = useState('')
+
+  const filters = [
+    { label: 'En financiamiento', value: 'funding' },
+    { label: 'En evaluacion', value: 'draft' },
+    { label: 'Cerrados', value: 'closed' },
+  ];
+
   const loadProjects = async (isNewSearch = false) => {
-    const currentPage = isNewSearch ? 1 : page;
-    const response = await fetchProjects({ page: currentPage, limit: 12, search });
-    
+    const currentPage = isNewSearch || filterSelected != "" ? 1 : page;
+    const response = await fetchProjects({ 
+      page: currentPage, 
+      limit: 12, 
+      search,
+      filter: filterSelected
+    });
+    console.log('response?.data');
+    console.log(response?.data);
+
+
     if (response) {
       if (isNewSearch) {
         setProjects(response.data);
@@ -32,10 +48,9 @@ export const ProjectGrid: React.FC = () => {
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       loadProjects(true);
-    }, 500); // Debounce search
+    }, 500);
     return () => clearTimeout(timeoutId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search]);
+  }, [search, filterSelected]);
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 py-8">
@@ -44,7 +59,7 @@ export const ProjectGrid: React.FC = () => {
           <h1 className="text-4xl font-bold text-white mb-2">Explorar Proyectos</h1>
           <p className="text-gray-400">Descubre iniciativas increíbles y apoya el futuro.</p>
         </div>
-        
+
         <div className="relative w-full md:w-96">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Search className="h-5 w-5 text-gray-400" />
@@ -57,6 +72,22 @@ export const ProjectGrid: React.FC = () => {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
+      </div>
+
+      <div className='flex justify-center gap-3 mb-4'>
+        {filters.map((filter) => (
+          <div
+            key={filter.value}
+            onClick={() => setFilterSelected(filter.value)}
+            className={`px-5 py-2 rounded-full font-medium transition-all duration-200 text-sm cursor-pointer
+          ${filterSelected === filter.value
+                ? 'bg-brand-500 text-white shadow-[0_0_20px_rgba(109,40,217,0.8)] scale-105'
+                : 'bg-brand-600 hover:bg-brand-500 text-white shadow-[0_0_15px_rgba(109,40,217,0.5)]'
+              }`}
+          >
+            {filter.label}
+          </div>
+        ))}
       </div>
 
       {error && (

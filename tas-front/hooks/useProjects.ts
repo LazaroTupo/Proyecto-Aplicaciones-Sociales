@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { projectsService, GetProjectsParams, Project, ProjectsResponse } from '../services/projects';
+import { projectsService, GetProjectsParams, Project, ProjectsResponse, ProjectStats } from '../services/projects';
 
 export const useProjects = () => {
   const [loading, setLoading] = useState(false);
@@ -56,9 +56,25 @@ export const useProjects = () => {
     } catch (err: any) {
       console.error('Update Project Error Data:', err.response?.data);
       setError(
-        Array.isArray(err.response?.data?.message) 
-          ? err.response.data.message.join(', ') 
+        Array.isArray(err.response?.data?.message)
+          ? err.response.data.message.join(', ')
           : err.response?.data?.message || err.message || 'Error updating project'
+      );
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const getProjectStats = useCallback(async (): Promise<ProjectStats | null> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const stats = await projectsService.getProjectStats();
+      return stats;
+    } catch (err: any) {
+      console.error('Get Project Stats Error Data:', err.response?.data);
+      setError('Error obteniendo estadísticas de proyectos'
       );
       throw err;
     } finally {
@@ -88,5 +104,6 @@ export const useProjects = () => {
     createProject,
     updateProject,
     deleteProject,
+    getProjectStats
   };
 };

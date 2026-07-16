@@ -5,6 +5,7 @@ import { NotificationsGateway } from './notifications.gateway';
 import { Notification } from './entities/notification.entity';
 import { AuthModule } from '../auth/auth.module';
 import { NotificationsController } from './notifications.controller';
+import { ProjectsService } from 'src/projects/projects.service';
 
 @Module({
   imports: [

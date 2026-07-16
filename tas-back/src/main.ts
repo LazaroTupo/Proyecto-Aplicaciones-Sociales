@@ -9,7 +9,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   
   const configService = app.get(ConfigService);
-  const frontendUrl = configService.get<string>('FRONTEND_URL') || 'http://localhost:3001';
+  const frontendUrl = configService.get<string>('FRONTEND_URL') || 'http://localhost:3003';
   const isProd = configService.get<string>('NODE_ENV') === 'prod';
 
   app.use(json({ limit: '50mb' }));
@@ -42,6 +42,6 @@ async function bootstrap() {
     SwaggerModule.setup('api/docs', app, document);
   }
 
-  await app.listen(configService.get<number>('PORT') ?? 3000);
+  await app.listen(configService.get<number>('PORT') ?? 3002);
 }
 bootstrap();

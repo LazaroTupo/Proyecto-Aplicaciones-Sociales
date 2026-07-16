@@ -130,8 +130,12 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
                   // In a real scenario, NEXT_PUBLIC_API_URL should be parsed if it has /api.
                   // For now, we assume the backend serves uploads statically on root.
                   // Since they aren't served right now by the backend, this is a placeholder URL that will work once the backend configures ServeStaticModule.
-                  const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+                  const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
                   const fileUrl = `${backendUrl}/uploads/projects/${project.id}/${fileName}`;
+
+                  console.log('fileUrl');
+                  console.log(fileUrl);
+                  
                   
                   return (
                     <div key={idx} className="flex items-center p-4 bg-black/30 hover:bg-black/50 border border-white/5 hover:border-brand-500/50 rounded-xl transition-all group relative">
@@ -257,7 +261,7 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
         isOpen={isPaymentModalOpen} 
         onClose={() => setPaymentModalOpen(false)} 
         projectId={project.id} 
-        rewards={project.rewards} 
+        rewards={project.rewards ?? []} 
       />
     </div>
   );

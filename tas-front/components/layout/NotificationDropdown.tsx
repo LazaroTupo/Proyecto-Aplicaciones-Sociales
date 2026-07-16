@@ -50,13 +50,12 @@ export const NotificationDropdown = () => {
     }
     setIsOpen(false);
     
-    // Routing logic based on notification type
     if (notification.type === 'new_pledge') {
-      router.push('/profile'); // Redirects to Dashboard/Pledges
+      router.push('/profile');
     } else if (notification.type === 'project_status') {
-      router.push('/profile'); // Redirects to Dashboard
+      router.push('/profile');
     } else {
-      router.push('/profile'); // Fallback
+      router.push('/profile');
     }
   };
 
@@ -64,7 +63,7 @@ export const NotificationDropdown = () => {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-gray-300 hover:text-white transition-colors focus:outline-none rounded-full hover:bg-white/5"
+        className="relative p-2 text-gray-300 hover:text-white transition-colors focus:outline-none rounded-full hover:bg-white/5 cursor-pointer"
       >
         <Bell className="w-6 h-6" />
         {unreadCount > 0 && (

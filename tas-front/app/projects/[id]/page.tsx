@@ -7,18 +7,24 @@ import { ProjectDetail } from '@/components/projects/ProjectDetail';
 import { ProjectDetailSkeleton } from '@/components/projects/ProjectDetailSkeleton';
 import { toast } from 'sonner';
 import { useInteract } from '@/hooks/useRecommendations';
+import { useNotificationsStore } from '@/hooks/useNotificationsStore';
 
 export default function CampaignPage() {
+
+  const {
+    initializeSocket,
+    emitProjectView
+  } = useNotificationsStore();
+
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
-  
+
   const { fetchProjectById, deleteProject, loading, error } = useProjects();
   const [project, setProject] = useState<any>(null);
   const { interact } = useInteract();
-  
-  // Dummy check for ownership, in a real app this would compare with Auth context user.id
-  const isOwner = true; // Temporary for demonstration
+
+  const isOwner = true;
 
   useEffect(() => {
     if (id) {
@@ -47,6 +53,23 @@ export default function CampaignPage() {
       toast.error('No se pudo eliminar el proyecto');
     }
   };
+
+  useEffect(() => {
+    initializeSocket();
+  }, []);
+
+  useEffect(() => {
+    console.log('project');
+    console.log(project);
+    
+    if (project?.id && project?.creator?.id) {
+      emitProjectView({
+        projectId: project.id,
+        ownerId: project.creator.id,
+        title: project.title
+      });
+    }
+  }, [project]);
 
   if (loading || !project) {
     if (error) {

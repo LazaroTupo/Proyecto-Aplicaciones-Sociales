@@ -9,7 +9,11 @@ interface NotificationsState {
   unreadCount: number;
   socket: Socket | null;
   isConnected: boolean;
-  
+  emitProjectView: (data: {
+    projectId: string;
+    ownerId: string;
+    title: string;
+  }) => void;
   initializeSocket: () => void;
   disconnectSocket: () => void;
   fetchNotifications: (retryCount?: number) => Promise<void>;
@@ -29,16 +33,35 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
 
     if (get().socket) return;
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-    // Using io namespace connection format
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
     const socket = io(`${API_URL}/ws/notifications`, {
       auth: { token },
-      query: { token }, // Include in both just in case backend expects it differently
+      query: { token },
       transports: ['websocket'],
     });
 
     socket.on('connect', () => {
+      console.log('CONECTADO');
+
       set({ isConnected: true });
+    });
+
+    socket.on('project_viewed', (payload: any) => {
+
+      toast.info(
+        payload?.message || 'Hay alguien viendo tu proyecto',
+        {
+          action: {
+            label: 'Ver',
+            onClick: () => {
+              console.log('Ver proyecto', payload?.projectId);
+              window.location.href = `/projects/${payload.projectId}`;
+            },
+          },
+        }
+      );
+
+      get().fetchNotifications();
     });
 
     socket.on('disconnect', () => {
@@ -54,7 +77,7 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
       toast.info(payload?.message || 'Un proyecto ha cambiado de estado.');
       get().fetchNotifications();
     });
-    
+
     // Generic notifications
     socket.on('notification', (payload: any) => {
       toast(payload?.message || 'Nueva notificación recibida');
@@ -62,6 +85,18 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
     });
 
     set({ socket });
+  },
+
+  emitProjectView: (data: {
+    projectId: string;
+    ownerId: string;
+    title: string;
+  }) => {
+    const socket = get().socket;
+
+    if (socket) {
+      socket.emit('project_view', data);
+    }
   },
 
   disconnectSocket: () => {
@@ -75,15 +110,14 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
   fetchNotifications: async (retryCount = 0) => {
     try {
       const response = await getNotifications(1, 20);
-      set({ 
+      set({
         notifications: response.data,
         unreadCount: response.data.filter(n => !n.isRead).length
       });
     } catch (error) {
-      // Si hay error (como un 404/Network Error temporal al iniciar), reintentamos en segundo plano.
       if (retryCount < 10) {
         const delay = 3000 * Math.pow(1.5, retryCount);
-        console.warn(`Error fetching notifications, reintentando en ${Math.round(delay/1000)}s...`);
+        console.warn(`Error fetching notifications, reintentando en ${Math.round(delay / 1000)}s...`);
         setTimeout(() => {
           get().fetchNotifications(retryCount + 1);
         }, delay);
@@ -95,7 +129,7 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
 
   markAsRead: async (id) => {
     set((state) => ({
-      notifications: state.notifications.map(n => 
+      notifications: state.notifications.map(n =>
         n.id === id ? { ...n, isRead: true } : n
       ),
       unreadCount: Math.max(0, state.unreadCount - 1)

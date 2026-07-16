@@ -32,14 +32,13 @@ export class PredictionsService {
       throw new ForbiddenException('You do not have permission to evaluate this project');
     }
 
-    // Preparar el payload mapeando los datos del proyecto
     const payload: AiPredictionRequest = {
       targetAmount: Number(project.targetAmount),
-      durationDays: project.durationDays,
-      trlLevel: project.trlLevel,
-      hasVideo: project.description.includes('<video>') || project.description.includes('youtube.com'), // Lógica simple simulada
-      category: 'Technology', // Asumido o extraído del proyecto si estuviera implementado
-      descriptionLength: project.description.length,
+      durationDays: project.durationDays ?? 0,
+      trlLevel: project.trlLevel ?? 0,
+      hasVideo: (project.description?.includes('<video>') ?? false) || (project.description?.includes('youtube.com') ?? false),
+      category: 'Technology',
+      descriptionLength: project.description ? project.description.length : 0,
     };
 
     // Llamar al microservicio de Inteligencia Artificial (lanzará error si 503 u otro)

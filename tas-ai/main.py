@@ -13,6 +13,11 @@ def startup_event():
     # Asegura que los modelos se entrenen y carguen al levantar el servidor
     load_models()
 
+# ✅ Correcto
+@app.get("/test")
+def test():
+    return "okok"
+
 @app.post("/api/predict", response_model=PredictionResponse)
 def evaluate_project(features: ProjectFeatures):
     """

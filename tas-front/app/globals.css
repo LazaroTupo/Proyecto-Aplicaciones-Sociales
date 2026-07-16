@@ -16,6 +16,12 @@
   --brand-hover: #5b21b6;
 }
 
+.recharts-responsive-container{
+  background-color: #2b2a2a;
+  border-radius: 10px;
+  padding: 5px;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);

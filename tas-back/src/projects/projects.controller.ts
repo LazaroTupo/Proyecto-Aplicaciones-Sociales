@@ -28,7 +28,7 @@ import * as path from 'path';
 
 @Controller('projects')
 export class ProjectsController {
-  constructor(private readonly projectsService: ProjectsService) {}
+  constructor(private readonly projectsService: ProjectsService) { }
 
   @Post()
   @UseGuards(JwtAuthGuard)
@@ -58,11 +58,18 @@ export class ProjectsController {
     return this.projectsService.findAll(query);
   }
 
+  @Get('stats')
+  getStats() {
+    return this.projectsService.getStats();
+  }
+
   @Get(':id')
   // Public endpoint
   findOne(@Param('id') id: string) {
     return this.projectsService.findOne(id);
   }
+
+
 
   @Put(':id')
   @UseGuards(JwtAuthGuard)

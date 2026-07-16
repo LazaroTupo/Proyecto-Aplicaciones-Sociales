@@ -2,7 +2,7 @@ import { InvestmentHistoryTable } from '@/components/payments/InvestmentHistoryT
 
 export default function ProfileInvestmentsPage() {
   return (
-    <div className="flex-1 space-y-8">
+    <div className="flex-1 space-y-8 px-10 py-24">
       <div>
         <h1 className="text-3xl font-bold text-white mb-2">Mis Inversiones</h1>
         <p className="text-slate-400">

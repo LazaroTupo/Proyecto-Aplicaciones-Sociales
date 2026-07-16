@@ -8,6 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
 import { paymentsService } from '@/services/payments';
+import { ProjectReward } from '@/services/projects';
 
 const paymentSchema = z.object({
   amount: z.number().min(1, 'El monto debe ser mayor a 0').max(1000000, 'Monto máximo excedido'),
@@ -26,7 +27,7 @@ interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
   projectId: string;
-  rewards?: Reward[];
+  rewards?: ProjectReward[];
 }
 
 export function PaymentModal({ isOpen, onClose, projectId, rewards = [] }: PaymentModalProps) {
@@ -56,6 +57,9 @@ export function PaymentModal({ isOpen, onClose, projectId, rewards = [] }: Payme
       
       // Redirigir a la URL de aprobación de PayPal
       if (response.approvalUrl) {
+        console.log('response.approvalUrl');
+        console.log(response.approvalUrl);
+        
         window.location.href = response.approvalUrl;
       } else {
         throw new Error('No approval URL received');
@@ -145,13 +149,16 @@ export function PaymentModal({ isOpen, onClose, projectId, rewards = [] }: Payme
                       </div>
                       
                       {rewards.map((reward) => {
-                        const isEligible = selectedAmount >= reward.amount;
+                        const isEligible = true;
                         const isSelected = watch('rewardId') === reward.id;
 
                         return (
                           <div
                             key={reward.id}
                             onClick={() => {
+                              console.log('reward.id');
+                              setValue('amount', reward.amount);
+                              
                               if (isEligible) setValue('rewardId', reward.id);
                             }}
                             className={`p-3 rounded-xl border transition-all ${
@@ -164,7 +171,7 @@ export function PaymentModal({ isOpen, onClose, projectId, rewards = [] }: Payme
                           >
                             <div className="flex justify-between items-center">
                               <p className="font-medium text-white text-sm">
-                                Desde S/ {reward.amount}
+                                S/ {reward.amount}
                               </p>
                             </div>
                             <p className="text-xs text-slate-300 mt-1">{reward.description}</p>

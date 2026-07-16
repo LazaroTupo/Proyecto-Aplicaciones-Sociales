@@ -33,6 +33,7 @@ export default function ProfilePage() {
     { name: "Mis Proyectos", href: "/projects/me", icon: FolderKanban },
     { name: "Mis Inversiones", href: "/payments/me/pledges", icon: CreditCard },
     { name: "Evaluaciones IA", href: "/predictions", icon: Sparkles },
+    { name: "Resumen de proyectos", href: "/resume", icon: Sparkles },
   ];
 
   const form = useForm<ProfileFormValues>({

@@ -28,9 +28,21 @@ export interface AuthResponse {
 }
 
 export const authService = {
-  async register(data: RegisterDto): Promise<AuthResponse> {
-    const response = await api.post<AuthResponse>('/auth/register', data);
-    return response.data;
+  async register(data: RegisterDto): Promise<AuthResponse | null> {
+
+    try{
+      console.log('REGISTRAR');
+    
+      const response = await api.post<AuthResponse>('/auth/register', data);
+      console.log('response');
+      console.log(response);
+      
+      return response.data;
+    }catch(err){
+      console.log('err');
+      console.log(err);
+      return null
+    }
   },
 
   async login(data: LoginDto): Promise<AuthResponse> {

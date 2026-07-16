@@ -6,29 +6,29 @@ export class CreateProjectDto {
   @IsNotEmpty()
   @IsString()
   @MaxLength(255)
-  title: string;
+  title!: string;
 
   @IsNotEmpty()
   @IsString()
-  description: string;
+  description!: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(0)
-  targetAmount: number;
+  targetAmount?: number;
 
-  @IsNotEmpty()
+  @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(1)
-  durationDays: number;
+  durationDays?: number;
 
-  @IsNotEmpty()
+  @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(1)
-  trlLevel: number;
+  trlLevel?: number;
 
   @IsOptional()
   @Transform(({ value }) => {
@@ -39,9 +39,9 @@ export class CreateProjectDto {
   @IsBoolean()
   hasVideo?: boolean;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  category: string;
+  category?: string;
 
   @IsOptional()
   @Type(() => Number)
