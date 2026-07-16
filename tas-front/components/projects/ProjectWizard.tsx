@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useProjects } from '../../hooks/useProjects';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, ArrowLeft, Plus, Trash2, UploadCloud, Loader2, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Plus, Trash2, UploadCloud, Loader2, CheckCircle2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 const schema = z.object({
@@ -43,6 +43,7 @@ export const ProjectWizard: React.FC<{ existingProject?: any }> = ({ existingPro
   const [aiData, setAiData] = useState<any>(null);
   const [createdProjectId, setCreatedProjectId] = useState<string | null>(null);
   const [existingDocumentUrls, setExistingDocumentUrls] = useState<string[]>(existingProject?.documentUrls || []);
+  const [isEnhancing, setIsEnhancing] = useState(false);
 
   const handleExistingFileDelete = async (fileName: string) => {
     try {
@@ -58,7 +59,7 @@ export const ProjectWizard: React.FC<{ existingProject?: any }> = ({ existingPro
     }
   };
 
-  const { control, handleSubmit, trigger, formState: { errors } } = useForm<ProjectFormData>({
+  const { control, handleSubmit, trigger, getValues, setValue, formState: { errors } } = useForm<ProjectFormData>({
     resolver: zodResolver(schema) as any,
     defaultValues: {
       title: existingProject?.title || '',
@@ -76,6 +77,40 @@ export const ProjectWizard: React.FC<{ existingProject?: any }> = ({ existingPro
     control,
     name: "rewards"
   });
+
+  const handleEnhanceDescription = async () => {
+    const currentText = getValues("description");
+    if (!currentText || currentText.trim() === "") {
+      toast.error("Por favor, escribe al menos una breve descripción antes de mejorarla con IA.");
+      return;
+    }
+
+    try {
+      setIsEnhancing(true);
+      const res = await fetch("/api/ai/enhance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: currentText }),
+      });
+
+      if (!res.ok) {
+        throw new Error("No se pudo conectar con el asistente de IA");
+      }
+
+      const data = await res.json();
+      if (data.enhancedText) {
+        setValue("description", data.enhancedText, { shouldValidate: true, shouldDirty: true });
+        toast.success("¡Descripción mejorada exitosamente con IA!", {
+          className: "bg-brand-500/10 border-brand-500/20 text-brand-400 backdrop-blur-md"
+        });
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Ocurrió un error al intentar mejorar el texto.");
+    } finally {
+      setIsEnhancing(false);
+    }
+  };
 
   const handleNext = async () => {
     let fieldsToValidate: any[] = [];
@@ -269,9 +304,24 @@ export const ProjectWizard: React.FC<{ existingProject?: any }> = ({ existingPro
 
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">Descripción Detallada</label>
-                    <Controller name="description" control={control} render={({ field }) => (
-                      <textarea {...field} rows={5} className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:ring-2 focus:ring-brand-500 outline-none" placeholder="Describe el problema y tu solución..." />
-                    )} />
+                    <div className="relative">
+                      <Controller name="description" control={control} render={({ field }) => (
+                        <textarea {...field} rows={7} className="w-full bg-black/40 border border-white/10 rounded-lg p-3 pb-12 text-white focus:ring-2 focus:ring-brand-500 outline-none resize-none" placeholder="Describe el problema y tu solución..." />
+                      )} />
+                      <button
+                        type="button"
+                        onClick={handleEnhanceDescription}
+                        disabled={isEnhancing}
+                        className="absolute bottom-3 right-3 flex items-center gap-1.5 px-3 py-1.5 bg-brand-500/10 hover:bg-brand-500/20 border border-brand-500/30 text-brand-400 text-xs font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isEnhancing ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Sparkles className="w-3.5 h-3.5" />
+                        )}
+                        {isEnhancing ? "Mejorando..." : "✨ Mejorar con IA"}
+                      </button>
+                    </div>
                     {errors.description && <p className="text-red-400 text-xs mt-1">{errors.description.message}</p>}
                   </div>
                 </div>
