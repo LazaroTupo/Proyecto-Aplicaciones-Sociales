@@ -260,51 +260,51 @@ async function bootstrap() {
 
     let investmentCount = 0;
 
-    for (const project of generatedProjects) {
-      try {
-        // Aseguramos que el proyecto pueda recibir aportes
-        await dataSource.query(`UPDATE projects SET status = 'funding' WHERE id = $1`, [project.id]);
+    // for (const project of generatedProjects) {
+    //   try {
+    //     // Aseguramos que el proyecto pueda recibir aportes
+    //     await dataSource.query(`UPDATE projects SET status = 'funding' WHERE id = $1`, [project.id]);
         
-        const rewards = await dataSource.manager.find(Reward, {
-            where: { project: { id: project.id } },
-            order: { amount: 'ASC' }
-        });
+    //     const rewards = await dataSource.manager.find(Reward, {
+    //         where: { project: { id: project.id } },
+    //         order: { amount: 'ASC' }
+    //     });
 
-        // 1 a 3 inversores aleatorios por proyecto
-        const numInvestors = Math.floor(Math.random() * 3) + 1;
+    //     // 1 a 3 inversores aleatorios por proyecto
+    //     const numInvestors = Math.floor(Math.random() * 3) + 1;
         
-        for(let j = 0; j < numInvestors; j++) {
-           const backer = backers[Math.floor(Math.random() * backers.length)];
-           const investmentData = realisticInvestments[Math.floor(Math.random() * realisticInvestments.length)];
+    //     for(let j = 0; j < numInvestors; j++) {
+    //        const backer = backers[Math.floor(Math.random() * backers.length)];
+    //        const investmentData = realisticInvestments[Math.floor(Math.random() * realisticInvestments.length)];
            
-           let rewardId: string | undefined = undefined;
-           if (investmentData.useReward && rewards && rewards.length > 0) {
-              const validRewards = rewards.filter(r => Number(r.amount) <= investmentData.amount);
-              if (validRewards.length > 0) {
-                 rewardId = validRewards[validRewards.length - 1].id;
-              }
-           }
+    //        let rewardId: string | undefined = undefined;
+    //        if (investmentData.useReward && rewards && rewards.length > 0) {
+    //           const validRewards = rewards.filter(r => Number(r.amount) <= investmentData.amount);
+    //           if (validRewards.length > 0) {
+    //              rewardId = validRewards[validRewards.length - 1].id;
+    //           }
+    //        }
 
-           try {
-              // 1. Crear Orden
-              const pledgeResult = await paymentsService.createPledge(project.id, backer.id, {
-                 amount: investmentData.amount,
-                 rewardId: rewardId
-              });
+    //        try {
+    //           // 1. Crear Orden
+    //           const pledgeResult = await paymentsService.createPledge(project.id, backer.id, {
+    //              amount: investmentData.amount,
+    //              rewardId: rewardId
+    //           });
               
-              // 2. Capturar Pago
-              await paymentsService.capturePayPalOrder(pledgeResult.paypalOrderId);
+    //           // 2. Capturar Pago
+    //           await paymentsService.capturePayPalOrder(pledgeResult.paypalOrderId);
               
-              logger.log(`Aporte de $${investmentData.amount} exitoso: ${backer.firstName} invirtió en "${project.title}"`);
-              investmentCount++;
-           } catch(e: any) {
-              logger.error(`Error simulando aporte en "${project.title}" por ${backer.firstName}: ${e.message}`);
-           }
-        }
-      } catch (e: any) {
-        logger.error(`Error general procesando inversiones para ${project.title}: ${e.message}`);
-      }
-    }
+    //           logger.log(`Aporte de $${investmentData.amount} exitoso: ${backer.firstName} invirtió en "${project.title}"`);
+    //           investmentCount++;
+    //        } catch(e: any) {
+    //           logger.error(`Error simulando aporte en "${project.title}" por ${backer.firstName}: ${e.message}`);
+    //        }
+    //     }
+    //   } catch (e: any) {
+    //     logger.error(`Error general procesando inversiones para ${project.title}: ${e.message}`);
+    //   }
+    // }
     logger.log(`Se han procesado un total de ${investmentCount} inversiones de prueba.`);
     // --- FIN INYECCIÓN MÓDULO PAGOS ---
 

@@ -194,8 +194,6 @@ export class ProjectsService {
       status: project.status,
     });
 
-    // TODO: Manticore Search - Sync updated status to index
-
     return updatedProject;
   }
 
