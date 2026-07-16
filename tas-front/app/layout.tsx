@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/layout/Navbar";
 import { Toaster } from "sonner";
+import FloatingChat from "@/components/chat/FloatingChat";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,6 +34,7 @@ export default function RootLayout({
         <main>
           {children}
         </main>
+        <FloatingChat />
         <Toaster position="top-right" theme="dark" toastOptions={{ className: 'glass-toast bg-zinc-900/80 border-zinc-800 text-white backdrop-blur-xl' }} />
       </body>
     </html>
