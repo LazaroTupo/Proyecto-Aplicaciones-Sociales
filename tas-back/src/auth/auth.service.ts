@@ -78,6 +78,14 @@ export class AuthService {
 
     const { password: _, ...userWithoutPassword } = user;
 
+    console.log('-------------');
+    
+    console.log({
+      accessToken,
+      refreshToken,
+      user: userWithoutPassword,
+    });
+    
     return {
       accessToken,
       refreshToken,

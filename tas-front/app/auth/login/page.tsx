@@ -44,7 +44,7 @@ export default function LoginPage() {
       if (res.refreshToken) {
         Cookies.set('refreshToken', res.refreshToken, { secure: true, sameSite: 'strict' });
       }
-      router.push('/profile'); // Ajusta según la ruta real del proyecto
+      router.push('/profile');
     } catch (error) {
       if (axios.isAxiosError(error)) {
         setErrorMsg(error.response?.data?.message || 'Error al iniciar sesión. Verifica tus credenciales.');
