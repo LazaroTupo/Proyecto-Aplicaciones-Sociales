@@ -6,7 +6,7 @@ import { catchError } from 'rxjs/operators';
 @Injectable()
 export class ManticoreService implements OnModuleInit {
   private readonly logger = new Logger(ManticoreService.name);
-  private readonly manticoreUrl = process.env.MANTICORE_URL || 'http://213.210.20.7:9308';
+  private readonly manticoreUrl = 'http://213.210.20.7:9308';
 
   constructor(private readonly httpService: HttpService) {}
 
