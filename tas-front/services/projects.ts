@@ -51,6 +51,7 @@ export interface GetProjectsParams {
   search?: string;
   creatorId?: string;
   filter?: string;
+  status?: string;
 }
 
 export const projectsService = {
@@ -94,5 +95,9 @@ export const projectsService = {
   updateProjectStatus: async (id: string, status: string): Promise<Project> => {
     const { data } = await api.patch(`/projects/${id}/status`, { status });
     return data;
+  },
+
+  publishProject: async (id: string): Promise<void> => {
+    await api.patch(`/projects/${id}/publish`);
   }
 };

@@ -9,6 +9,8 @@ import { User } from '../users/entities/user.entity';
 import { AiPredictionService } from '../ai-prediction/ai-prediction.service';
 import { ManticoreService } from '../manticore/manticore.service';
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ProjectStatus } from './entities/project.entity';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
@@ -19,7 +21,8 @@ export class ProjectsService {
     private readonly projectRepository: Repository<Project>,
     private readonly aiPredictionService: AiPredictionService,
     private readonly manticoreService: ManticoreService,
-  ) { }
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   async create(createProjectDto: CreateProjectDto, user: User, files: Express.Multer.File[]) {
     const descriptionLength = createProjectDto.descriptionLength ?? createProjectDto.description?.length ?? 0;
@@ -76,10 +79,17 @@ export class ProjectsService {
     if (creatorId) {
       whereClause.creator = { id: creatorId };
     }
+    
     if (filter) {
       console.log('filter');
       console.log(filter);
       whereClause.status = filter;
+    }
+    
+    if (query.status) {
+      whereClause.status = query.status;
+    } else if (!creatorId) {
+      whereClause.status = In([ProjectStatus.FUNDING, ProjectStatus.FUNDED, ProjectStatus.CLOSED]);
     }
     let manticoreUuids: string[] = [];
 
@@ -215,13 +225,35 @@ export class ProjectsService {
     return updatedProject;
   }
 
+  async publish(id: string, userId: string) {
+    const project = await this.findOne(id);
+
+    if (project.creator.id !== userId) {
+      throw new ForbiddenException('You can only publish your own projects');
+    }
+
+    if (project.status !== ProjectStatus.DRAFT) {
+      throw new ForbiddenException('Only DRAFT projects can be published for review');
+    }
+
+    project.status = ProjectStatus.REVIEW;
+    const updatedProject = await this.projectRepository.save(project);
+
+    return updatedProject;
+  }
+
   async updateStatus(id: string, updateProjectStatusDto: UpdateProjectStatusDto) {
     const project = await this.findOne(id);
     project.status = updateProjectStatusDto.status;
 
     const updatedProject = await this.projectRepository.save(project);
 
-    // TODO: Manticore Search - Sync updated status to index
+    this.eventEmitter.emit('project_status_changed', {
+      userId: project.creator.id,
+      projectId: project.id,
+      projectName: project.title,
+      status: project.status,
+    });
 
     return updatedProject;
   }

@@ -1,5 +1,6 @@
-import { IsOptional, IsString, IsNumber, Min, IsUUID } from 'class-validator';
+import { IsOptional, IsString, IsNumber, Min, IsUUID, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
+import { ProjectStatus } from '../entities/project.entity';
 
 export class FindProjectsDto {
   @IsOptional()
@@ -25,4 +26,6 @@ export class FindProjectsDto {
   @IsOptional()
   @IsString()
   filter?: string;
+  @IsEnum(ProjectStatus)
+  status?: ProjectStatus;
 }

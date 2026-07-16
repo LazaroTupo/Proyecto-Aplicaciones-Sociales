@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { motion } from "framer-motion";
-import { User, Mail, Shield, CheckCircle, XCircle, Camera, Loader2, Save, LayoutDashboard, FolderKanban, CreditCard, Sparkles, Settings } from "lucide-react";
+import { User, Mail, Shield, ShieldCheck, CheckCircle, XCircle, Camera, Loader2, Save, LayoutDashboard, FolderKanban, CreditCard, Sparkles, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useUser } from "@/hooks/useUsers";
@@ -35,6 +35,10 @@ export default function ProfilePage() {
     { name: "Evaluaciones IA", href: "/predictions", icon: Sparkles },
     { name: "Resumen de proyectos", href: "/resume", icon: Sparkles },
   ];
+
+  if (user?.role === 'admin') {
+    navItems.push({ name: "Panel Admin", href: "/admin/projects", icon: ShieldCheck as any });
+  }
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
