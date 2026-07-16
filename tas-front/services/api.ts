@@ -2,7 +2,7 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import Cookies from 'js-cookie';
 import { toast } from 'sonner';
 
-const API_URL = "http://localhost:3002";
+const API_URL = "http://213.210.20.7:3002";
 
 export const api = axios.create({
   baseURL: API_URL,

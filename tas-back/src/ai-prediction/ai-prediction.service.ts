@@ -32,7 +32,7 @@ export class AiPredictionService {
   async predict(payload: AiPredictionRequest): Promise<AiPredictionResponse> {
     try {
       this.logger.log(`Sending prediction request to AI microservice...`);
-      const aiUrl = this.configService.get<string>('AI_SERVICE_URL') || 'http://localhost:8000/api/predict';
+      const aiUrl = this.configService.get<string>('AI_SERVICE_URL') || 'http://213.210.20.7:8000/api/predict';
       const { data } = await firstValueFrom(
         this.httpService.post<AiPredictionResponse>(aiUrl, payload).pipe(
           catchError((error: AxiosError) => {

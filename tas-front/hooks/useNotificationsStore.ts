@@ -33,7 +33,7 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
 
     if (get().socket) return;
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://213.210.20.7:3002';
     const socket = io(`${API_URL}/ws/notifications`, {
       auth: { token },
       query: { token },

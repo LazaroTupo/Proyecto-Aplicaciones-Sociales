@@ -130,7 +130,7 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({
                   // In a real scenario, NEXT_PUBLIC_API_URL should be parsed if it has /api.
                   // For now, we assume the backend serves uploads statically on root.
                   // Since they aren't served right now by the backend, this is a placeholder URL that will work once the backend configures ServeStaticModule.
-                  const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
+                  const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://213.210.20.7:3002';
                   const fileUrl = `${backendUrl}/uploads/projects/${project.id}/${fileName}`;
 
                   console.log('fileUrl');
